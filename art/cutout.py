@@ -75,5 +75,4 @@ sticker(
     ],
     holes=[(172, 425)],
 )
-# Sunset Boost: arms up. The promo text covers his legs, so it's cut at the waist.
-sticker("story-sunset-boost.png", (0, 420, 470, 875), "kid-cheer", cut={"left": (0, 115), "bottom": (70, 360)})
+# Sunset Boost's arms-up pose isn't usable: one thumb is off the story's edge, the other hand under its title.

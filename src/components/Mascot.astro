@@ -1,14 +1,13 @@
 ---
 // The client's own mascot, cut out of their stories (art/cutout.py), as a separate layer so it
 // can move over any image. Loops run only while on screen: motion.ts toggles .is-live (data-loop).
-//   point: full body, pointing up      → hop (squash & stretch with a floor shadow) or sway
-//   cheer: arms up, cut at the waist   → bob; the cut edge must stay hidden by its container
+// Pose: full body pointing up (the only clean cut-out so far). Motion: hop (squash & stretch
+// with a floor shadow), sway or bob.
 import { Picture } from 'astro:assets';
 import point from '../assets/kid/kid-point.png';
-import cheer from '../assets/kid/kid-cheer.png';
 
 interface Props {
-  pose: 'point' | 'cheer';
+  pose: 'point';
   motion: 'hop' | 'sway' | 'bob';
   sizes: string;
   class?: string;
@@ -16,7 +15,7 @@ interface Props {
 }
 
 const { pose, motion, sizes, class: className, eager = false } = Astro.props;
-const src = pose === 'point' ? point : cheer;
+const src = { point }[pose];
 ---
 
 <div class:list={['kid', `kid--${motion}`, className]} data-loop>
@@ -81,7 +80,6 @@ const src = pose === 'point' ? point : cheer;
     to { transform: rotate(2deg) translateY(-1%); }
   }
 
-  /* Small enough that a waist cut hidden below its container never shows. */
   @keyframes bob {
     from { transform: translateY(2%) rotate(-1.5deg); }
     to { transform: translateY(-3%) rotate(1.5deg); }

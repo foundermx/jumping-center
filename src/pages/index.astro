@@ -27,7 +27,7 @@ import { PARTY_HREF } from '../data/site';
 
     <div id="parque">
       <Stop index={0} image={trampolines} variant="overlay">
-        <Mascot slot="media" pose="cheer" motion="bob" class="tramp-kid" sizes="(min-width: 900px) 22vw, 48vw" />
+        <Mascot slot="media" pose="point" motion="hop" class="tramp-kid" sizes="(min-width: 900px) 12vw, 30vw" />
       </Stop>
       <Stop index={1} image={retos} variant="panel" />
       <Stop index={2} image={infantil} variant="curve" />
@@ -57,13 +57,13 @@ import { PARTY_HREF } from '../data/site';
     height: 1px;
   }
 
-  /* Arms up, popping in from below the frame (his waist cut stays under the bottom edge). */
+  /* Hops on the court, right of the headline. */
   :global(.tramp-kid) {
     position: absolute;
     z-index: 1;
-    right: 9%;
-    bottom: -9%;
-    width: clamp(180px, 22vw, 340px);
+    right: 14%;
+    bottom: 12%;
+    width: clamp(120px, 12vw, 200px);
   }
 
   /* Host pose standing on the seam between the lime panel and the party room. */
@@ -76,12 +76,12 @@ import { PARTY_HREF } from '../data/site';
   }
 
   @media (width < 900px) {
-    :global(.tramp-kid) { right: 4%; bottom: -6%; width: clamp(170px, 48vw, 300px); }
+    :global(.tramp-kid) { right: 8%; bottom: 10%; width: clamp(110px, 30vw, 170px); }
     :global(.party-kid) { left: 3%; bottom: 0; width: clamp(104px, 26vw, 180px); }
   }
 
   @media (prefers-reduced-motion: no-preference) {
-    :global(.js .stop:not(.is-in) .tramp-kid) { transform: translateY(75%); }
+    :global(.js .stop:not(.is-in) .tramp-kid) { opacity: 0; transform: translateY(-30%) scale(0.9); }
     :global(.js .stop:not(.is-in) .party-kid) { opacity: 0; transform: translateY(-30%) scale(0.9); }
     :global(.js .stop .tramp-kid),
     :global(.js .stop .party-kid) { transition: opacity 0.6s var(--ease-out) 0.5s, transform 1s var(--ease-spring) 0.5s; }

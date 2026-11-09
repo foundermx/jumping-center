@@ -35,7 +35,7 @@ const leaf =
                   <span class="sun" />
                   <span class="rays" />
                 </span>
-                <Mascot pose="cheer" motion="bob" class="card__kid" sizes="(min-width: 900px) 18vw, 44vw" />
+                <Mascot pose="point" motion="sway" class="card__kid" sizes="(min-width: 900px) 12vw, 28vw" />
               </>
             )}
 
@@ -148,13 +148,11 @@ const leaf =
   .card--sunset :global(.card__kid) {
     position: absolute;
     z-index: 2;
-    right: 5%;
-    bottom: 0;
-    width: 54%;
-    clip-path: inset(-60% -60% 0 -60%);
+    right: 8%;
+    bottom: 6%;
+    width: 34%;
   }
-  /* pushed 7% below the clip line so the bob never lifts the cut into view */
-  .card--sunset :global(.card__kid .kid__body) { translate: 0 7%; transition: scale 0.7s var(--ease-spring); }
+  .card--sunset :global(.card__kid .kid__body) { transition: scale 0.7s var(--ease-spring); }
   }
 
   /* ---------------------------------------------------------------- Pumpkin Day Pass */
@@ -216,7 +214,7 @@ const leaf =
     .promos__grid { grid-template-columns: 1fr; gap: 18px; }
     .card { aspect-ratio: 1 / 0.8; }
     .card__title { font-size: 12.5cqi; padding: 7cqi 7cqi 0; }
-    .card--sunset :global(.card__kid) { width: 40%; right: 9%; }
+    .card--sunset :global(.card__kid) { width: 26%; right: 10%; }
     .card--pumpkin :global(.card__pumpkin) { width: 56%; left: 64%; bottom: -6%; }
   }
 
