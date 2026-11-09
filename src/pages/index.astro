@@ -27,13 +27,13 @@ import { PARTY_HREF } from '../data/site';
 
     <div id="parque">
       <Stop index={0} image={trampolines} variant="overlay">
-        <Mascot slot="media" pose="jump" class="tramp-kid" sizes="(min-width: 900px) 14vw, 32vw" />
+        <Mascot slot="media" pose="cheer" motion="bob" class="tramp-kid" sizes="(min-width: 900px) 22vw, 48vw" />
       </Stop>
       <Stop index={1} image={retos} variant="panel" />
       <Stop index={2} image={infantil} variant="curve" />
       <Stop index={3} image={fiestas} variant="party">
         <a class="btn btn--dark" href={PARTY_HREF}>Consulta paquetes <Arrow /></a>
-        <Mascot slot="deco" pose="welcome" class="party-kid" sizes="(min-width: 900px) 17vw, 36vw" />
+        <Mascot slot="deco" pose="point" motion="sway" class="party-kid" sizes="(min-width: 900px) 13vw, 30vw" />
       </Stop>
     </div>
 
@@ -57,31 +57,31 @@ import { PARTY_HREF } from '../data/site';
     height: 1px;
   }
 
-  /* The kid hops over the far trampolines, right of the headline. */
+  /* Arms up, popping in from below the frame (his waist cut stays under the bottom edge). */
   :global(.tramp-kid) {
     position: absolute;
     z-index: 1;
-    left: 61%;
-    top: 30%;
-    width: clamp(130px, 12.5vw, 210px);
+    right: 9%;
+    bottom: -9%;
+    width: clamp(180px, 22vw, 340px);
   }
 
   /* Host pose standing on the seam between the lime panel and the party room. */
   :global(.party-kid) {
     position: absolute;
     z-index: 3;
-    left: calc(42.5% - clamp(70px, 7.5vw, 130px));
+    left: calc(42.5% - clamp(64px, 6.5vw, 110px));
     bottom: clamp(16px, 2.4vw, 36px);
-    width: clamp(150px, 16vw, 260px);
+    width: clamp(128px, 13vw, 220px);
   }
 
   @media (width < 900px) {
-    :global(.tramp-kid) { left: auto; right: 6%; top: auto; bottom: 14%; width: clamp(120px, 30vw, 200px); }
-    :global(.party-kid) { left: 2%; bottom: 0; width: clamp(120px, 30vw, 210px); }
+    :global(.tramp-kid) { right: 4%; bottom: -6%; width: clamp(170px, 48vw, 300px); }
+    :global(.party-kid) { left: 3%; bottom: 0; width: clamp(104px, 26vw, 180px); }
   }
 
   @media (prefers-reduced-motion: no-preference) {
-    :global(.js .stop:not(.is-in) .tramp-kid),
+    :global(.js .stop:not(.is-in) .tramp-kid) { transform: translateY(75%); }
     :global(.js .stop:not(.is-in) .party-kid) { opacity: 0; transform: translateY(-30%) scale(0.9); }
     :global(.js .stop .tramp-kid),
     :global(.js .stop .party-kid) { transition: opacity 0.6s var(--ease-out) 0.5s, transform 1s var(--ease-spring) 0.5s; }

@@ -22,12 +22,12 @@ h1 { position: absolute; left: 60px; top: 205px; margin: 0; font-size: 104px; li
 p { position: absolute; left: 66px; top: 452px; margin: 0; font-size: 26px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
 p::before { content: ''; display: inline-block; width: 16px; height: 16px; margin-right: 12px; border-radius: 50% 50% 50% 0; background: #ccf82a; box-shadow: inset 0 0 0 4px #101020; rotate: -45deg; }
 .park { position: absolute; right: -60px; top: 70px; width: 700px; }
-.kid { position: absolute; right: 330px; top: 140px; width: 170px; }
+.kid { position: absolute; right: 360px; top: 150px; width: 150px; }
 .ring { position: absolute; right: -40px; top: 250px; width: 700px; height: 300px; border: 3px solid #a9d80c; border-radius: 50%; }
 </style>
 <div class="ring"></div>
 <img class="park" src="${file('src/assets/renders/hero.webp')}">
-<img class="kid" src="${file('src/assets/renders/mascot-jump.webp')}">
+<img class="kid" src="${file('src/assets/kid/kid-point.png')}">
 <div class="logo">${logo}</div>
 <h1>Salta sin<br>límites.</h1>
 <p>Orizaba, Veracruz</p>`;

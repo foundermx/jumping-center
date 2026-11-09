@@ -32,8 +32,9 @@ Astro genera AVIF/WebP en varios anchos al compilar.
 
 ## Arte 3D (`art/`)
 
-Las imágenes del parque, la mascota y la calabaza son renders con path tracing del modelo 3D
-en `art/src` (Three.js + three-gpu-pathtracer, en Chromium con la GPU). Viven aparte para no
+La mascota es el dibujo real del cliente, recortado de sus historias (`art/ref`) con
+`python3 art/cutout.py` → `src/assets/kid`. Las imágenes del parque y la calabaza son renders con
+path tracing del modelo 3D en `art/src` (Three.js + three-gpu-pathtracer, en Chromium con la GPU). Viven aparte para no
 tocar las dependencias del sitio:
 
 ```sh
@@ -45,7 +46,8 @@ node logo.mjs && node mark.mjs && node og.mjs   # logo, favicon, imagen social e
 
 ## Pendiente del cliente
 
-- Fotos reales del parque y el logo original en vector (el logo actual es una reconstrucción).
+- Fotos reales del parque, el logo en vector (el actual es una reconstrucción) y la mascota en PNG
+  transparente en varias poses (hoy sale de recortes de sus historias: solo hay dos poses limpias).
 - Dirección exacta (el botón «Cómo llegar» busca «Jumping Center Orizaba» en Google Maps).
 - WhatsApp (`CONTACT.whatsapp` en `site.ts`): con él, «Consulta paquetes» abre el chat.
 - Confirmar respuestas de preguntas frecuentes y la vigencia de las promociones.

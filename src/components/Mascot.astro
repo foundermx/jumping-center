@@ -1,31 +1,34 @@
 ---
-// The brand kid as a separate cut-out, so it can hop (squash & stretch) over any render.
-// The loop runs only while on screen: motion.ts toggles .is-live through data-loop.
+// The client's own mascot, cut out of their stories (art/cutout.py), as a separate layer so it
+// can move over any image. Loops run only while on screen: motion.ts toggles .is-live (data-loop).
+//   point: full body, pointing up      → hop (squash & stretch with a floor shadow) or sway
+//   cheer: arms up, cut at the waist   → bob; the cut edge must stay hidden by its container
 import { Picture } from 'astro:assets';
-import jump from '../assets/renders/mascot-jump.webp';
-import welcome from '../assets/renders/mascot-welcome.webp';
+import point from '../assets/kid/kid-point.png';
+import cheer from '../assets/kid/kid-cheer.png';
 
 interface Props {
-  pose: 'jump' | 'welcome';
+  pose: 'point' | 'cheer';
+  motion: 'hop' | 'sway' | 'bob';
   sizes: string;
   class?: string;
   eager?: boolean;
 }
 
-const { pose, sizes, class: className, eager = false } = Astro.props;
-const src = pose === 'jump' ? jump : welcome;
+const { pose, motion, sizes, class: className, eager = false } = Astro.props;
+const src = pose === 'point' ? point : cheer;
 ---
 
-<div class:list={['kid', `kid--${pose}`, className]} data-loop>
-  <span class="kid__shadow" aria-hidden="true"></span>
+<div class:list={['kid', `kid--${motion}`, className]} data-loop>
+  {motion === 'hop' && <span class="kid__shadow" aria-hidden="true" />}
   <Picture
     class="kid__body"
     src={src}
     formats={['avif', 'webp']}
-    fallbackFormat="webp"
-    widths={[240, 360, 540, 720]}
+    fallbackFormat="png"
+    widths={[200, 300, src.width]}
     sizes={sizes}
-    quality={58}
+    quality={70}
     loading={eager ? 'eager' : 'lazy'}
     alt=""
   />
@@ -44,29 +47,28 @@ const src = pose === 'jump' ? jump : welcome;
 
   .kid__shadow {
     position: absolute;
-    left: 22%;
-    right: 22%;
-    bottom: -7%;
-    height: 7%;
+    left: 18%;
+    right: 18%;
+    bottom: -5%;
+    height: 5%;
     border-radius: 50%;
     background: radial-gradient(closest-side, rgb(16 16 32 / 0.38), transparent);
   }
 
-  .kid--welcome .kid__shadow { bottom: -2%; left: 18%; right: 18%; }
-
   @media (prefers-reduced-motion: no-preference) {
-    .kid--jump.is-live :global(.kid__body) { animation: hop 1.5s infinite; }
-    .kid--jump.is-live .kid__shadow { animation: shadow 1.5s infinite; }
-    .kid--welcome.is-live :global(.kid__body) { animation: sway 3.4s ease-in-out infinite alternate; }
+    .kid--hop.is-live :global(.kid__body) { animation: hop 1.5s infinite; }
+    .kid--hop.is-live .kid__shadow { animation: shadow 1.5s infinite; }
+    .kid--sway.is-live :global(.kid__body) { animation: sway 3.4s ease-in-out infinite alternate; }
+    .kid--bob.is-live :global(.kid__body) { animation: bob 2.2s ease-in-out infinite alternate; }
   }
 
   /* Squash on contact, stretch on the way up and down, rest at the apex. */
   @keyframes hop {
-    0% { transform: translateY(0) scale(1.07, 0.93); animation-timing-function: cubic-bezier(0.25, 0.8, 0.4, 1); }
-    14% { transform: translateY(-7%) scale(0.95, 1.06); animation-timing-function: cubic-bezier(0.2, 0.6, 0.4, 1); }
-    50% { transform: translateY(-17%) scale(1, 1); animation-timing-function: cubic-bezier(0.6, 0, 0.8, 0.4); }
-    86% { transform: translateY(-5%) scale(0.96, 1.05); animation-timing-function: linear; }
-    100% { transform: translateY(0) scale(1.07, 0.93); }
+    0% { transform: translateY(0) scale(1.06, 0.94); animation-timing-function: cubic-bezier(0.25, 0.8, 0.4, 1); }
+    14% { transform: translateY(-6%) scale(0.96, 1.05); animation-timing-function: cubic-bezier(0.2, 0.6, 0.4, 1); }
+    50% { transform: translateY(-14%) scale(1, 1); animation-timing-function: cubic-bezier(0.6, 0, 0.8, 0.4); }
+    86% { transform: translateY(-4%) scale(0.97, 1.04); animation-timing-function: linear; }
+    100% { transform: translateY(0) scale(1.06, 0.94); }
   }
 
   @keyframes shadow {
@@ -75,7 +77,13 @@ const src = pose === 'jump' ? jump : welcome;
   }
 
   @keyframes sway {
-    from { transform: rotate(-2.2deg); }
-    to { transform: rotate(2.2deg) translateY(-1.5%); }
+    from { transform: rotate(-2deg); }
+    to { transform: rotate(2deg) translateY(-1%); }
+  }
+
+  /* Small enough that a waist cut hidden below its container never shows. */
+  @keyframes bob {
+    from { transform: translateY(2%) rotate(-1.5deg); }
+    to { transform: translateY(-3%) rotate(1.5deg); }
   }
 </style>

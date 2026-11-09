@@ -35,7 +35,7 @@ const leaf =
                   <span class="sun" />
                   <span class="rays" />
                 </span>
-                <Mascot pose="jump" class="card__kid" sizes="(min-width: 900px) 22vw, 60vw" />
+                <Mascot pose="cheer" motion="bob" class="card__kid" sizes="(min-width: 900px) 18vw, 44vw" />
               </>
             )}
 
@@ -143,13 +143,18 @@ const leaf =
     background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40' fill='none' stroke='%23fff' stroke-width='4.5' stroke-linecap='round'%3E%3Cpath d='M6 30 15 21M20 5v13M34 12l-9 9'/%3E%3C/svg%3E") center / contain no-repeat;
     rotate: -20deg;
   }
+  /* Arms up behind the sun like in their Sunset Boost story; may poke out of the top of the
+     card, never out of the bottom (the waist cut sits under the card's edge). */
   .card--sunset :global(.card__kid) {
     position: absolute;
     z-index: 2;
-    right: 3%;
-    bottom: 9%;
-    width: 50%;
-    transition: transform 0.7s var(--ease-spring);
+    right: 5%;
+    bottom: 0;
+    width: 54%;
+    clip-path: inset(-60% -60% 0 -60%);
+  }
+  /* pushed 7% below the clip line so the bob never lifts the cut into view */
+  .card--sunset :global(.card__kid .kid__body) { translate: 0 7%; transition: scale 0.7s var(--ease-spring); }
   }
 
   /* ---------------------------------------------------------------- Pumpkin Day Pass */
@@ -199,7 +204,7 @@ const leaf =
 
   @media (hover: hover) and (pointer: fine) {
     .card:hover { transform: translateY(-8px) rotate(-1.2deg); box-shadow: 0 30px 50px -28px rgb(16 16 32 / 0.55); }
-    .card--sunset:hover :global(.card__kid) { transform: translateY(-9%) rotate(4deg); }
+    .card--sunset:hover :global(.card__kid .kid__body) { scale: 1.07; }
     .card--pumpkin:hover :global(.card__pumpkin) { transform: rotate(-7deg) scale(1.05); }
     .card--chill:hover .leaf--c1 { transform: translate(-10%, 14%) rotate(-30deg); }
     .card--chill:hover .leaf--c2 { transform: translate(12%, -8%) rotate(24deg); }
@@ -211,7 +216,7 @@ const leaf =
     .promos__grid { grid-template-columns: 1fr; gap: 18px; }
     .card { aspect-ratio: 1 / 0.8; }
     .card__title { font-size: 12.5cqi; padding: 7cqi 7cqi 0; }
-    .card--sunset :global(.card__kid) { width: 42%; right: 8%; }
+    .card--sunset :global(.card__kid) { width: 40%; right: 9%; }
     .card--pumpkin :global(.card__pumpkin) { width: 56%; left: 64%; bottom: -6%; }
   }
 
