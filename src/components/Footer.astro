@@ -1,0 +1,78 @@
+---
+import Logo from '../assets/brand/logo.svg';
+import { BRAND, CITY, NAV } from '../data/site';
+const year = new Date().getFullYear();
+---
+
+<footer class="footer">
+  <div class="container footer__bar">
+    <a class="footer__logo" href="#top" aria-label={`${BRAND}, volver al inicio`}>
+      <Logo aria-hidden="true" />
+    </a>
+    <nav aria-label="Pie de página">
+      <ul>
+        {NAV.map(({ label, href }) => <li><a href={href}>{label}</a></li>)}
+      </ul>
+    </nav>
+    <p class="footer__city">{CITY}</p>
+  </div>
+  <p class="container footer__legal">© {year} {BRAND} · Diversión en acción</p>
+</footer>
+
+<style>
+  .footer {
+    background: var(--ink);
+    color: #fff;
+    padding: clamp(36px, 5vw, 56px) 0 28px;
+  }
+
+  .footer__bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 20px clamp(20px, 4vw, 56px);
+    padding-bottom: 28px;
+    border-bottom: 1px solid rgb(255 255 255 / 0.12);
+  }
+
+  .footer__logo {
+    --logo-ink: #fff;
+    --logo-pill: var(--ink);
+    --logo-pill-edge: #fff;
+    width: clamp(120px, 12vw, 160px);
+    transition: transform 0.5s var(--ease-spring);
+  }
+  .footer__logo :global(svg) { width: 100%; height: auto; }
+
+  @media (hover: hover) and (pointer: fine) {
+    .footer__logo:hover { transform: rotate(-3deg) scale(1.04); }
+    .footer a:not(.footer__logo):hover { color: var(--lime); }
+  }
+
+  ul { display: flex; flex-wrap: wrap; }
+  li + li { border-left: 1px solid rgb(255 255 255 / 0.25); }
+  ul a {
+    display: block;
+    padding: 12px clamp(12px, 1.6vw, 22px);
+    font-weight: 600;
+    transition: color 0.25s;
+  }
+
+  .footer__city { margin-left: auto; font-weight: 600; }
+
+  .footer__legal {
+    padding-top: 20px;
+    font-size: 0.85rem;
+    color: rgb(255 255 255 / 0.62);
+  }
+
+  .footer :focus-visible { outline-color: var(--lime); }
+
+  @media (width < 700px) {
+    .footer__bar { flex-direction: column; align-items: flex-start; }
+    ul a { padding-left: 0; }
+    li + li { border: 0; }
+    li + li a { padding-left: 18px; }
+    .footer__city { margin-left: 0; }
+  }
+</style>

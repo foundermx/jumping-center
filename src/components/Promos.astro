@@ -1,0 +1,231 @@
+---
+import { Picture } from 'astro:assets';
+import Mascot from './Mascot.astro';
+import pumpkin from '../assets/renders/pumpkin.webp';
+import { PROMOS } from '../data/site';
+
+const leaf =
+  'M50 3 56 19 64 15 61 33 76 21 74 31 90 29 82 41 94 47 74 57 78 65 56 61 54 83 46 83 44 61 22 65 26 57 6 47 18 41 10 29 26 31 24 21 39 33 36 15 44 19Z';
+---
+
+<section class="promos" id="promociones" aria-labelledby="promos-title">
+  <div class="container">
+    <header class="promos__head">
+      <h2 class="display promos__title lines has-sparkle" id="promos-title" data-reveal="lines">
+        <span style="--i: 0"><span>Promociones</span></span>
+        <span style="--i: 1"><span>de temporada</span></span>
+        <i class="sparkle" aria-hidden="true"></i>
+      </h2>
+      <p class="lead promos__sub" data-reveal="up" style="--d: 250ms">Consulta vigencia en el parque.</p>
+    </header>
+
+    <ul class="promos__grid" data-reveal="deal">
+      {
+        PROMOS.map((promo, i) => (
+          <li class:list={['card', `card--${promo.id}`]} style={`--i: ${i}`}>
+            <h3 class="card__title" aria-label={promo.label}>
+              {promo.title.map((word) => (
+                <span aria-hidden="true">{word}</span>
+              ))}
+            </h3>
+
+            {promo.id === 'sunset' && (
+              <>
+                <span class="card__sky" aria-hidden="true">
+                  <span class="sun" />
+                  <span class="rays" />
+                </span>
+                <Mascot pose="jump" class="card__kid" sizes="(min-width: 900px) 22vw, 60vw" />
+              </>
+            )}
+
+            {promo.id === 'pumpkin' && (
+              <>
+                <Picture
+                  class="card__pumpkin"
+                  src={pumpkin}
+                  formats={['avif', 'webp']}
+                  fallbackFormat="webp"
+                  widths={[320, 480, 720]}
+                  sizes="(min-width: 900px) 24vw, 70vw"
+                  quality={56}
+                  alt=""
+                />
+                <svg class="leaf leaf--p1" viewBox="0 0 100 100" aria-hidden="true"><path d={leaf} /></svg>
+                <svg class="leaf leaf--p2" viewBox="0 0 100 100" aria-hidden="true"><path d={leaf} /></svg>
+              </>
+            )}
+
+            {promo.id === 'chill' && (
+              <>
+                <svg class="wind" viewBox="0 0 300 200" fill="none" aria-hidden="true">
+                  <path d="M10 170c60-10 120-50 170-110" />
+                  <path d="M60 190c50-8 110-40 160-96" />
+                </svg>
+                <svg class="leaf leaf--c1" viewBox="0 0 100 100" aria-hidden="true"><path d={leaf} /></svg>
+                <svg class="leaf leaf--c2" viewBox="0 0 100 100" aria-hidden="true"><path d={leaf} /></svg>
+                <svg class="leaf leaf--c3" viewBox="0 0 100 100" aria-hidden="true"><path d={leaf} /></svg>
+              </>
+            )}
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<style>
+  .promos { padding: clamp(72px, 10vw, 140px) 0 clamp(56px, 8vw, 110px); }
+
+  .promos__head { margin-bottom: clamp(28px, 4vw, 56px); }
+  .promos__title { font-size: var(--step-2); }
+  .promos__sub { margin-top: 12px; color: var(--ink-soft); }
+
+  .promos__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(14px, 1.8vw, 26px);
+  }
+
+  .card {
+    --r: 0deg;
+    position: relative;
+    container-type: inline-size;
+    aspect-ratio: 1 / 1.02;
+    border-radius: var(--radius);
+    overflow: clip;
+    overflow-clip-margin: 0;
+    transition: transform 0.6s var(--ease-spring), box-shadow 0.6s var(--ease-out);
+  }
+
+  .card__title {
+    position: relative;
+    z-index: 3;
+    display: grid;
+    padding: 9cqi 9cqi 0;
+    font-size: 15.5cqi;
+    font-weight: 800;
+    line-height: 0.9;
+    letter-spacing: -0.045em;
+    color: #fff;
+  }
+
+  /* ---------------------------------------------------------------- Sunset Boost */
+  .card--sunset {
+    overflow: visible;
+    background: linear-gradient(180deg, #ff9a2a 0%, #ff7417 52%, #f2560c 100%);
+  }
+  /* The kid may leave the card; the sky stays inside it. */
+  .card__sky {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border-radius: inherit;
+    background: radial-gradient(120% 70% at 30% 105%, rgb(255 214 92 / 0.65), transparent 60%);
+  }
+  .sun {
+    position: absolute;
+    left: -6%;
+    bottom: -20%;
+    width: 64%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: linear-gradient(180deg, #ffe07a, #ffb21e);
+    mask: linear-gradient(#000 52%, transparent 52% 58%, #000 58% 66%, transparent 66% 71%, #000 71% 77%, transparent 77% 81%, #000 81%);
+    clip-path: inset(0 0 26% 0);
+  }
+  .rays {
+    position: absolute;
+    left: 14%;
+    top: 46%;
+    width: 18%;
+    aspect-ratio: 1;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40' fill='none' stroke='%23fff' stroke-width='4.5' stroke-linecap='round'%3E%3Cpath d='M6 30 15 21M20 5v13M34 12l-9 9'/%3E%3C/svg%3E") center / contain no-repeat;
+    rotate: -20deg;
+  }
+  .card--sunset :global(.card__kid) {
+    position: absolute;
+    z-index: 2;
+    right: 3%;
+    bottom: 9%;
+    width: 50%;
+    transition: transform 0.7s var(--ease-spring);
+  }
+
+  /* ---------------------------------------------------------------- Pumpkin Day Pass */
+  .card--pumpkin { background: radial-gradient(110% 80% at 70% 15%, #9a2546, #5c1029 70%); }
+  .card--pumpkin :global(.card__pumpkin),
+  .card--pumpkin :global(.card__pumpkin img) {
+    position: absolute;
+    left: 54%;
+    bottom: -5%;
+    width: 66%;
+    translate: -50% 0;
+    transition: transform 0.7s var(--ease-spring);
+  }
+  .card--pumpkin :global(.card__pumpkin img) { position: static; translate: none; width: 100%; }
+
+  /* ---------------------------------------------------------------- Chill Fall */
+  .card--chill { background: var(--lime); }
+  .card--chill .card__title { color: var(--ink); }
+
+  .wind {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 90%;
+    stroke: #fff;
+    stroke-width: 7;
+    stroke-linecap: round;
+    opacity: 0.9;
+  }
+
+  .leaf {
+    position: absolute;
+    z-index: 2;
+    transition: transform 0.8s var(--ease-spring);
+  }
+  .leaf path { fill: #f26b1d; }
+  .leaf--c1 { right: 4%; top: 16%; width: 30%; rotate: 24deg; }
+  .leaf--c1 path { fill: #e8590c; }
+  .leaf--c2 { left: 6%; bottom: 4%; width: 34%; rotate: -28deg; }
+  .leaf--c2 path { fill: #d9480f; }
+  .leaf--c3 { right: 30%; top: 4%; width: 13%; rotate: 50deg; }
+  .leaf--c3 path { fill: #ff922b; }
+  .leaf--p1 { right: 9%; top: 47%; width: 13%; rotate: 22deg; }
+  .leaf--p1 path { fill: #ff922b; }
+  .leaf--p2 { left: 6%; bottom: 8%; width: 15%; rotate: -34deg; }
+  .leaf--p2 path { fill: #e8590c; }
+
+  @media (hover: hover) and (pointer: fine) {
+    .card:hover { transform: translateY(-8px) rotate(-1.2deg); box-shadow: 0 30px 50px -28px rgb(16 16 32 / 0.55); }
+    .card--sunset:hover :global(.card__kid) { transform: translateY(-9%) rotate(4deg); }
+    .card--pumpkin:hover :global(.card__pumpkin) { transform: rotate(-7deg) scale(1.05); }
+    .card--chill:hover .leaf--c1 { transform: translate(-10%, 14%) rotate(-30deg); }
+    .card--chill:hover .leaf--c2 { transform: translate(12%, -8%) rotate(24deg); }
+    .card--chill:hover .leaf--c3 { transform: translate(-30%, 40%) rotate(60deg); }
+    .card--pumpkin:hover .leaf { transform: translateY(-14%) rotate(30deg); }
+  }
+
+  @media (width < 600px) {
+    .promos__grid { grid-template-columns: 1fr; gap: 18px; }
+    .card { aspect-ratio: 1 / 0.8; }
+    .card__title { font-size: 12.5cqi; padding: 7cqi 7cqi 0; }
+    .card--sunset :global(.card__kid) { width: 42%; right: 8%; }
+    .card--pumpkin :global(.card__pumpkin) { width: 56%; left: 64%; bottom: -6%; }
+  }
+
+  /* Cards are dealt onto the table, one after another. */
+  @media (prefers-reduced-motion: no-preference) {
+    :global(.js) .promos__grid:not(:global(.is-in)) .card { opacity: 0; }
+    /* backwards fill only: once dealt, hover transitions own the transform again */
+    :global(.js) .promos__grid:global(.is-in) .card { animation: deal 1.1s var(--ease-spring) calc(var(--i) * 120ms) backwards; }
+    .card--sunset { --r: -9deg; }
+    .card--pumpkin { --r: 5deg; }
+    .card--chill { --r: 11deg; }
+  }
+
+  @keyframes deal {
+    from { opacity: 0; transform: translateY(90px) rotate(var(--r)); }
+  }
+</style>

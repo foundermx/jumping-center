@@ -1,0 +1,89 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Hero from '../components/Hero.astro';
+import Stop from '../components/Stop.astro';
+import Mascot from '../components/Mascot.astro';
+import Arrow from '../components/Arrow.astro';
+import Promos from '../components/Promos.astro';
+import Visit from '../components/Visit.astro';
+import Faq from '../components/Faq.astro';
+import Footer from '../components/Footer.astro';
+import trampolines from '../assets/renders/trampolines.webp';
+import retos from '../assets/renders/retos.webp';
+import infantil from '../assets/renders/infantil.webp';
+import fiestas from '../assets/renders/fiestas.webp';
+import { PARTY_HREF } from '../data/site';
+---
+
+<Layout
+  title="Jumping Center · Parque de trampolines en Orizaba, Veracruz"
+  description="Trampolines, zona de retos, zona infantil y fiestas en Orizaba, Veracruz. Recorre el parque y planea tu visita a Jumping Center."
+>
+  <span id="top-edge" aria-hidden="true"></span>
+  <Header />
+  <main id="contenido">
+    <Hero />
+
+    <div id="parque">
+      <Stop index={0} image={trampolines} variant="overlay">
+        <Mascot slot="media" pose="jump" class="tramp-kid" sizes="(min-width: 900px) 14vw, 32vw" />
+      </Stop>
+      <Stop index={1} image={retos} variant="panel" />
+      <Stop index={2} image={infantil} variant="curve" />
+      <Stop index={3} image={fiestas} variant="party">
+        <a class="btn btn--dark" href={PARTY_HREF}>Consulta paquetes <Arrow /></a>
+        <Mascot slot="deco" pose="welcome" class="party-kid" sizes="(min-width: 900px) 17vw, 36vw" />
+      </Stop>
+    </div>
+
+    <Promos />
+    <Visit />
+    <Faq />
+  </main>
+  <Footer />
+</Layout>
+
+<script>
+  import '../scripts/motion.ts';
+</script>
+
+<style>
+  #top-edge {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1px;
+    height: 1px;
+  }
+
+  /* The kid hops over the far trampolines, right of the headline. */
+  :global(.tramp-kid) {
+    position: absolute;
+    z-index: 1;
+    left: 61%;
+    top: 30%;
+    width: clamp(130px, 12.5vw, 210px);
+  }
+
+  /* Host pose standing on the seam between the lime panel and the party room. */
+  :global(.party-kid) {
+    position: absolute;
+    z-index: 3;
+    left: calc(42.5% - clamp(70px, 7.5vw, 130px));
+    bottom: clamp(16px, 2.4vw, 36px);
+    width: clamp(150px, 16vw, 260px);
+  }
+
+  @media (width < 900px) {
+    :global(.tramp-kid) { left: auto; right: 6%; top: auto; bottom: 14%; width: clamp(120px, 30vw, 200px); }
+    :global(.party-kid) { left: 2%; bottom: 0; width: clamp(120px, 30vw, 210px); }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    :global(.js .stop:not(.is-in) .tramp-kid),
+    :global(.js .stop:not(.is-in) .party-kid) { opacity: 0; transform: translateY(-30%) scale(0.9); }
+    :global(.js .stop .tramp-kid),
+    :global(.js .stop .party-kid) { transition: opacity 0.6s var(--ease-out) 0.5s, transform 1s var(--ease-spring) 0.5s; }
+  }
+</style>

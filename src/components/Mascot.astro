@@ -1,0 +1,81 @@
+---
+// The brand kid as a separate cut-out, so it can hop (squash & stretch) over any render.
+// The loop runs only while on screen: motion.ts toggles .is-live through data-loop.
+import { Picture } from 'astro:assets';
+import jump from '../assets/renders/mascot-jump.webp';
+import welcome from '../assets/renders/mascot-welcome.webp';
+
+interface Props {
+  pose: 'jump' | 'welcome';
+  sizes: string;
+  class?: string;
+  eager?: boolean;
+}
+
+const { pose, sizes, class: className, eager = false } = Astro.props;
+const src = pose === 'jump' ? jump : welcome;
+---
+
+<div class:list={['kid', `kid--${pose}`, className]} data-loop>
+  <span class="kid__shadow" aria-hidden="true"></span>
+  <Picture
+    class="kid__body"
+    src={src}
+    formats={['avif', 'webp']}
+    fallbackFormat="webp"
+    widths={[240, 360, 540, 720]}
+    sizes={sizes}
+    quality={58}
+    loading={eager ? 'eager' : 'lazy'}
+    alt=""
+  />
+</div>
+
+<style>
+  .kid { pointer-events: none; }
+
+  .kid :global(.kid__body),
+  .kid :global(.kid__body img) {
+    display: block;
+    width: 100%;
+    height: auto;
+    transform-origin: 50% 100%;
+  }
+
+  .kid__shadow {
+    position: absolute;
+    left: 22%;
+    right: 22%;
+    bottom: -7%;
+    height: 7%;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgb(16 16 32 / 0.38), transparent);
+  }
+
+  .kid--welcome .kid__shadow { bottom: -2%; left: 18%; right: 18%; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .kid--jump.is-live :global(.kid__body) { animation: hop 1.5s infinite; }
+    .kid--jump.is-live .kid__shadow { animation: shadow 1.5s infinite; }
+    .kid--welcome.is-live :global(.kid__body) { animation: sway 3.4s ease-in-out infinite alternate; }
+  }
+
+  /* Squash on contact, stretch on the way up and down, rest at the apex. */
+  @keyframes hop {
+    0% { transform: translateY(0) scale(1.07, 0.93); animation-timing-function: cubic-bezier(0.25, 0.8, 0.4, 1); }
+    14% { transform: translateY(-7%) scale(0.95, 1.06); animation-timing-function: cubic-bezier(0.2, 0.6, 0.4, 1); }
+    50% { transform: translateY(-17%) scale(1, 1); animation-timing-function: cubic-bezier(0.6, 0, 0.8, 0.4); }
+    86% { transform: translateY(-5%) scale(0.96, 1.05); animation-timing-function: linear; }
+    100% { transform: translateY(0) scale(1.07, 0.93); }
+  }
+
+  @keyframes shadow {
+    0%, 100% { transform: scale(1); opacity: 1; animation-timing-function: cubic-bezier(0.25, 0.8, 0.4, 1); }
+    50% { transform: scale(0.55); opacity: 0.4; animation-timing-function: cubic-bezier(0.6, 0, 0.8, 0.4); }
+  }
+
+  @keyframes sway {
+    from { transform: rotate(-2.2deg); }
+    to { transform: rotate(2.2deg) translateY(-1.5%); }
+  }
+</style>

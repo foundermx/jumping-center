@@ -1,0 +1,228 @@
+---
+import Logo from '../assets/brand/logo.svg';
+import Arrow from './Arrow.astro';
+import { NAV } from '../data/site';
+---
+
+<header class="site-header">
+  <div class="container bar">
+    <a class="brand" href="#top" aria-label="Jumping Center, ir al inicio">
+      <Logo aria-hidden="true" class="brand__logo" />
+    </a>
+
+    <nav class="nav" id="menu" popover aria-label="Principal">
+      <button class="menu-close" type="button" popovertarget="menu" popovertargetaction="hide" aria-label="Cerrar menú"></button>
+      <ul>
+        {NAV.map(({ label, href }) => <li><a href={href} data-nav>{label}</a></li>)}
+      </ul>
+      <a class="btn btn--dark nav__cta" href="#visita">Planea tu visita <Arrow /></a>
+    </nav>
+
+    <a class="btn btn--dark btn--sm cta" href="#visita">Planea tu visita <Arrow /></a>
+
+    <button class="menu-btn" type="button" popovertarget="menu" aria-label="Menú">
+      <span aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+
+<script>
+  const menu = document.getElementById('menu')!;
+  menu.addEventListener('click', (event) => {
+    if ((event.target as Element).closest('a') && menu.matches(':popover-open')) menu.hidePopover();
+  });
+</script>
+
+<style>
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: color-mix(in srgb, var(--cream) 94%, transparent);
+    transition: box-shadow 0.4s var(--ease-out);
+  }
+
+  .site-header::after {
+    content: '';
+    position: absolute;
+    inset: auto var(--gutter) 0;
+    height: 1px;
+    background: var(--cream-2);
+    transition: opacity 0.4s;
+  }
+
+  :global(.is-stuck) .site-header,
+  .site-header:global(.is-stuck) {
+    box-shadow: 0 10px 30px -18px rgb(16 16 32 / 0.35);
+  }
+  .site-header:global(.is-stuck)::after { opacity: 0; }
+
+  .bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-height: var(--header-h);
+  }
+
+  .brand {
+    flex: none;
+    display: block;
+    width: clamp(108px, 9vw + 70px, 156px);
+    margin-right: auto;
+    transition: transform 0.5s var(--ease-spring);
+  }
+
+  .brand :global(.brand__logo) { width: 100%; height: auto; }
+
+  @media (hover: hover) and (pointer: fine) {
+    .brand:hover { transform: rotate(-3deg) scale(1.04); }
+  }
+
+  /* Desktop: inline links with hairline dividers (the popover stays in the flow). */
+  .nav {
+    position: static;
+    display: flex;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    overflow: visible;
+    inset: auto;
+  }
+
+  .nav ul { display: flex; align-items: center; }
+
+  .nav li + li { border-left: 1.5px solid var(--cream-2); }
+
+  .nav a[data-nav] {
+    position: relative;
+    display: block;
+    padding: 12px clamp(14px, 1.6vw, 26px);
+    font-weight: 600;
+    font-size: 0.98rem;
+    letter-spacing: -0.01em;
+  }
+
+  .nav a[data-nav]::after {
+    content: '';
+    position: absolute;
+    left: clamp(14px, 1.6vw, 26px);
+    right: clamp(14px, 1.6vw, 26px);
+    bottom: 6px;
+    height: 3px;
+    border-radius: 3px;
+    background: var(--lime);
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 0.45s var(--ease-out);
+  }
+
+  .nav a[data-nav][aria-current='true']::after { transform: scaleX(1); transform-origin: left; }
+
+  @media (hover: hover) and (pointer: fine) {
+    .nav a[data-nav]:hover::after { transform: scaleX(1); transform-origin: left; }
+  }
+
+  .nav__cta, .menu-btn, .menu-close { display: none; }
+
+  @media (width < 900px) {
+    .nav:not(:popover-open) { display: none; }
+
+    .nav:popover-open {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: center;
+      gap: 28px;
+      width: 100%;
+      height: 100dvh;
+      padding: 96px var(--gutter) 40px;
+      background: var(--royal);
+      color: #fff;
+    }
+
+    .nav:popover-open ul { flex-direction: column; align-items: stretch; }
+    .nav:popover-open li + li { border: 0; border-top: 1px solid rgb(255 255 255 / 0.18); }
+    .nav:popover-open a[data-nav] { padding: 18px 0; font-size: clamp(2rem, 9vw, 2.8rem); font-weight: 800; letter-spacing: -0.04em; }
+    .nav:popover-open a[data-nav]::after { display: none; }
+    .nav:popover-open .nav__cta { display: inline-flex; align-self: flex-start; --bg: var(--lime); --fg: var(--ink); --fill: #fff; --fill-fg: var(--ink); }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .nav:popover-open li { animation: menu-in 0.6s var(--ease-out) both; }
+      .nav:popover-open li:nth-child(2) { animation-delay: 60ms; }
+      .nav:popover-open li:nth-child(3) { animation-delay: 120ms; }
+      .nav:popover-open .nav__cta { animation: menu-in 0.6s var(--ease-out) 180ms both; }
+    }
+
+    .menu-btn {
+      position: relative;
+      z-index: 60;
+      display: grid;
+      place-items: center;
+      width: 46px;
+      height: 46px;
+      border: 0;
+      border-radius: 50%;
+      background: var(--lime);
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    .menu-btn span,
+    .menu-btn span::before {
+      display: block;
+      width: 18px;
+      height: 2.5px;
+      border-radius: 2px;
+      background: var(--ink);
+      transition: transform 0.35s var(--ease-out), box-shadow 0.25s;
+    }
+
+    .menu-btn span { box-shadow: 0 -6px 0 var(--ink), 0 6px 0 var(--ink); }
+    .menu-btn span::before { content: ''; }
+
+    /* The open menu sits in the top layer, so it carries its own close button. */
+    .nav:popover-open .menu-close {
+      position: absolute;
+      top: calc((var(--header-h) - 46px) / 2);
+      right: var(--gutter);
+      display: block;
+      width: 46px;
+      height: 46px;
+      border: 0;
+      border-radius: 50%;
+      background: var(--lime);
+      cursor: pointer;
+    }
+    .menu-close::before,
+    .menu-close::after {
+      content: '';
+      position: absolute;
+      inset: 50% auto auto 50%;
+      width: 18px;
+      height: 2.5px;
+      border-radius: 2px;
+      background: var(--ink);
+      translate: -50% -50%;
+      rotate: 45deg;
+    }
+    .menu-close::after { rotate: -45deg; }
+  }
+
+  @media (width < 480px) {
+    .bar { gap: 10px; }
+    .cta { font-size: 0.86rem; padding-inline: 0.95em 0.8em; gap: 0.45em; }
+  }
+  @media (width < 370px) {
+    .cta { display: none; }
+  }
+
+  @keyframes menu-in {
+    from { opacity: 0; transform: translateY(24px); }
+  }
+</style>

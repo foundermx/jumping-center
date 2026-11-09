@@ -1,0 +1,103 @@
+---
+import { Picture } from 'astro:assets';
+import Arrow from './Arrow.astro';
+import hall from '../assets/renders/visita.webp';
+import { BRAND, CITY, MAP_URL } from '../data/site';
+---
+
+<section class="visit" id="visita" aria-labelledby="visit-title">
+  <div class="container visit__grid">
+    <div class="visit__copy">
+      <h2 class="display visit__title lines" id="visit-title" data-reveal="lines">
+        <span style="--i: 0"><span>Planea</span></span>
+        <span style="--i: 1"><span>tu visita</span></span>
+      </h2>
+      <p class="visit__place" data-reveal="up" style="--d: 200ms">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12Z" /><circle cx="12" cy="10" r="2.6" /></svg>
+        {BRAND} · {CITY}
+      </p>
+      <div data-reveal="up" style="--d: 320ms">
+        <a class="btn visit__cta" href={MAP_URL} target="_blank" rel="noopener">
+          Cómo llegar <Arrow /><span class="sr-only"> (abre Google Maps)</span>
+        </a>
+      </div>
+    </div>
+
+    <figure class="visit__media" data-reveal="frame">
+      <Picture
+        src={hall}
+        formats={['avif', 'webp']}
+        fallbackFormat="jpg"
+        widths={[640, 960, 1280, 1600]}
+        sizes="(min-width: 900px) 58vw, 100vw"
+        quality={52}
+        alt="Cancha de trampolines frente al muro con el logo de Jumping Center"
+      />
+    </figure>
+  </div>
+  <svg class="visit__swoosh" viewBox="0 0 600 220" fill="none" aria-hidden="true">
+    <path d="M4 214C120 120 300 40 596 6" pathLength="1" />
+  </svg>
+</section>
+
+<style>
+  .visit { position: relative; padding: clamp(40px, 6vw, 90px) 0; }
+
+  .visit__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    align-items: center;
+    gap: clamp(28px, 4vw, 64px);
+  }
+
+  .visit__title { font-size: var(--step-1); }
+
+  .visit__place {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: clamp(14px, 1.6vw, 22px) 0 clamp(22px, 2.6vw, 34px);
+    color: var(--ink-soft);
+    font-weight: 600;
+  }
+
+  .visit__place svg { width: 22px; height: 22px; flex: none; fill: var(--lime); stroke: var(--ink); stroke-width: 1.8; }
+  .visit__place circle { fill: var(--ink); stroke: none; }
+
+  .visit__media {
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+    border-radius: var(--radius);
+    aspect-ratio: 16 / 10;
+    margin-right: calc(-1 * var(--gutter));
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  .visit__media :global(img) { width: 100%; height: 100%; object-fit: cover; }
+
+  .visit__swoosh {
+    position: absolute;
+    left: clamp(8px, 12vw, 220px);
+    bottom: -2%;
+    width: clamp(260px, 34vw, 560px);
+    stroke: var(--lime-deep);
+    stroke-width: 2.5;
+    stroke-dasharray: 1;
+    vector-effect: non-scaling-stroke;
+  }
+
+  @media (width < 900px) {
+    .visit__grid { grid-template-columns: 1fr; }
+    .visit__media { margin-right: calc(-1 * var(--gutter)); }
+    .visit__swoosh { display: none; }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    :global(.js) .visit__media { transition: clip-path 1.3s var(--ease-io), scale 1.6s var(--ease-out); }
+    :global(.js) .visit__media:not(:global(.is-in)) { clip-path: inset(8% 0 8% 30% round var(--radius)); scale: 1.06; }
+    :global(.js) .visit__swoosh path { transition: stroke-dashoffset 1.6s var(--ease-io) 0.4s; }
+    :global(.js) .visit:not(:has(.visit__media:global(.is-in))) .visit__swoosh path { stroke-dashoffset: 1; }
+  }
+</style>

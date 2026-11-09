@@ -1,0 +1,17 @@
+{
+  "name": "jumping-center-art",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "serve": "vite --port 5190 --strictPort",
+    "render": "node render.mjs"
+  },
+  "devDependencies": {
+    "opentype.js": "^2.0.0",
+    "playwright-core": "1.59.1",
+    "three": "0.187.0",
+    "three-gpu-pathtracer": "0.0.28",
+    "three-mesh-bvh": "0.9.18",
+    "vite": "^8.3.7"
+  }
+}
