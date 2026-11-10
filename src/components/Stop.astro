@@ -9,11 +9,12 @@ interface Props {
   index: number;
   image: ImageMetadata;
   variant: 'overlay' | 'panel' | 'curve' | 'party';
+  /** The picture shows a pit that the physics playground fills with live cubes or balls. */
+  pit?: 'cubes' | 'balls';
 }
 
-const { index, image, variant } = Astro.props;
+const { index, image, variant, pit } = Astro.props;
 const zone = ZONES[index];
-const total = ZONES.length;
 const sizes = variant === 'overlay' ? '100vw' : '(min-width: 900px) 64vw, 100vw';
 
 // Confetti for the party stop: final offset (% of the burst box), turn and colour per piece.
@@ -25,7 +26,7 @@ const confetti = [
 ---
 
 <section class:list={['stop', `stop--${variant}`]} id={zone.id} aria-labelledby={`${zone.id}-title`} data-reveal="stop">
-  <div class="stop__media">
+  <div class="stop__media" data-pit={pit}>
     <Picture
       class="stop__img"
       src={image}
@@ -41,12 +42,6 @@ const confetti = [
 
   <div class="stop__panel">
     <div class="stop__copy">
-      <p class="counter">
-        <span>{`0${index + 1} / 0${total}`}</span>
-        <span class="counter__dots" aria-hidden="true">
-          {ZONES.map((_, i) => <i class:list={{ 'is-current': i === index }} />)}
-        </span>
-      </p>
       <h2 class="display stop__title lines" id={`${zone.id}-title`} data-reveal="lines" style="--d: 120ms">
         {zone.lines.map((line, i) => <span style={`--i: ${i}`}><span>{line}</span></span>)}
       </h2>
@@ -105,7 +100,6 @@ const confetti = [
   .stop__title { font-size: var(--step-1); }
   .stop__text { margin-top: clamp(10px, 1.2vw, 18px); max-width: 26ch; }
   .stop__copy :global(.btn) { margin-top: clamp(20px, 2.4vw, 32px); }
-  .counter { margin-bottom: clamp(14px, 1.8vw, 26px); }
 
   /* ================================================================ 01 overlay: full bleed */
   .stop--overlay {
@@ -131,7 +125,6 @@ const confetti = [
     padding-top: clamp(40px, 7vw, 96px);
   }
   .stop--overlay .stop__title { font-size: clamp(3rem, 1.2rem + 7vw, 8rem); }
-  .stop--overlay .counter__dots i:not(.is-current) { opacity: 0.7; }
 
   /* ================================================================ 02 panel: royal slab */
   .stop--panel {
@@ -143,7 +136,8 @@ const confetti = [
     color: #fff;
     clip-path: polygon(0 0, 100% 4.5vw, 100% calc(100% - 3vw), 0 100%);
   }
-  .stop--panel .stop__media { clip-path: polygon(0 0, 100% 0, 88% 100%, 0 100%); }
+  /* --cut is also read by the playground: the slanted edge is the pit's right-hand wall. */
+  .stop--panel .stop__media { --cut: 12%; clip-path: polygon(0 0, 100% 0, calc(100% - var(--cut)) 100%, 0 100%); }
   .stop--panel .stop__panel {
     display: grid;
     align-items: center;
@@ -259,7 +253,7 @@ const confetti = [
     .stop--curve,
     .stop--party { grid-template-columns: 1fr; min-height: 0; }
     .stop--panel { margin-top: -36px; clip-path: polygon(0 0, 100% 36px, 100% calc(100% - 28px), 0 100%); }
-    .stop--panel .stop__media { aspect-ratio: 4 / 3.2; clip-path: none; }
+    .stop--panel .stop__media { --cut: 0%; aspect-ratio: 4 / 3.2; clip-path: none; }
     .stop--panel .stop__panel { padding: 36px var(--gutter) 64px; }
     .stop--curve { margin-top: -28px; padding-top: 28px; }
     .stop--curve .stop__panel,
@@ -278,14 +272,11 @@ const confetti = [
       transition: scale 1.8s var(--ease-out), opacity 1s var(--ease-out), translate 1.3s var(--ease-out);
     }
     :global(.js) .stop .stop__text,
-    :global(.js) .stop .counter,
     :global(.js) .stop__copy :global(.btn) {
       transition: opacity 0.9s var(--ease-out), transform 1s var(--ease-out);
     }
-    :global(.js) .stop .counter { transition-delay: 60ms; }
     :global(.js) .stop .stop__text { transition-delay: 380ms; }
     :global(.js) .stop__copy :global(.btn) { transition-delay: 520ms; }
-    :global(.js) .stop:not(:global(.is-in)) .counter,
     :global(.js) .stop:not(:global(.is-in)) .stop__text,
     :global(.js) .stop:not(:global(.is-in)) .stop__copy :global(.btn) { opacity: 0; transform: translateY(22px); }
 
@@ -332,6 +323,12 @@ const confetti = [
       }
     }
   }
+
+  /* With the playground on (.play), the pit pictures hold still so the live cubes and balls stay
+     pinned to them, and the painted balls make way for the real ones. Declared after the parallax
+     so it wins. */
+  :global(.play) .stop__media[data-pit] :global(img) { animation: none; scale: none; }
+  :global(.play) .deco-balls { display: none; }
 
   @keyframes drop {
     0% { opacity: 0; transform: translateY(-160px); animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45); }

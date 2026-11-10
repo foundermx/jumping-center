@@ -29,8 +29,8 @@ import { PARTY_HREF } from '../data/site';
       <Stop index={0} image={trampolines} variant="overlay">
         <Mascot slot="media" pose="point" motion="hop" class="tramp-kid" sizes="(min-width: 900px) 12vw, 30vw" />
       </Stop>
-      <Stop index={1} image={retos} variant="panel" />
-      <Stop index={2} image={infantil} variant="curve" />
+      <Stop index={1} image={retos} variant="panel" pit="cubes" />
+      <Stop index={2} image={infantil} variant="curve" pit="balls" />
       <Stop index={3} image={fiestas} variant="party">
         <a class="btn btn--dark" href={PARTY_HREF}>Consulta paquetes <Arrow /></a>
         <Mascot slot="deco" pose="point" motion="sway" class="party-kid" sizes="(min-width: 900px) 13vw, 30vw" />
@@ -46,6 +46,7 @@ import { PARTY_HREF } from '../data/site';
 
 <script>
   import '../scripts/motion.ts';
+  import '../scripts/play.ts';
 </script>
 
 <style>

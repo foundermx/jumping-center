@@ -4,7 +4,7 @@ import { BRAND, CITY, NAV } from '../data/site';
 const year = new Date().getFullYear();
 ---
 
-<footer class="footer">
+<footer class="footer" data-play-floor>
   <div class="container footer__bar">
     <a class="footer__logo" href="#top" aria-label={`${BRAND}, volver al inicio`}>
       <Logo aria-hidden="true" />
@@ -67,6 +67,9 @@ const year = new Date().getFullYear();
   }
 
   .footer :focus-visible { outline-color: var(--lime); }
+
+  /* The bottom of the footer is the floor of the physics playground: room for what lands on it. */
+  :global(.play) .footer { padding-bottom: clamp(104px, 11vw, 160px); }
 
   @media (width < 700px) {
     .footer__bar { flex-direction: column; align-items: flex-start; }

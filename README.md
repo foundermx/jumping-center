@@ -18,17 +18,48 @@ pnpm check                  # tipos y plantillas
 | Secciones | `src/components/` (`Hero`, `Stop` = cada parada del recorrido, `Promos`, `Visit`, `Faq`, `Footer`) |
 | Colores, tipografía, botones, sistema de entradas | `src/styles/global.css` |
 | Toda la lógica de scroll (≈1 KB) | `src/scripts/motion.ts` |
+| Cubos y pelotas con física | `src/scripts/playground.ts` y `src/scripts/play/` (`src/scripts/play.ts` decide cuándo cargarlo) |
 | Imágenes | `src/assets/renders/*.webp` |
 
 Para poner fotos reales basta con reemplazar el `.webp` del mismo nombre (o cambiar el import).
-Astro genera AVIF/WebP en varios anchos al compilar.
+Astro genera AVIF/WebP en varios anchos al compilar. Ojo con tres imágenes: la mascota del hero
+está parada sobre una cama medida en `hero.webp` (`.hero__kid` en `Hero.astro`), y las albercas
+de `retos.webp` e `infantil.webp` se reconstruyen en 3D con la cámara y la geometría de sus renders
+(`src/scripts/play/scenes.ts`). Si cambia una de esas imágenes, hay que actualizar eso también.
 
 ## Movimiento
 
 - Entradas: `data-reveal` + IntersectionObserver añade `.is-in` una sola vez; el CSS hace el resto.
-- Loops (la mascota que rebota, los cubos): solo corren mientras su bloque está en pantalla (`data-loop` → `.is-live`).
+- Loops (las mascotas de las zonas y las promos, los cubos del hero): solo corren mientras su bloque está en pantalla (`data-loop` → `.is-live`).
 - Parallax: `animation-timeline: view()` solo en escritorio y donde existe; sin JS de scroll.
 - `prefers-reduced-motion: reduce` muestra todo quieto.
+
+## Física (cubos y pelotas)
+
+Los cubos de «Zona de retos» y las pelotas de «Zona infantil» son cuerpos rígidos (cannon-es)
+dibujados con three.js en un solo canvas sobre la página (`Stop` recibe `pit="cubes"` o `"balls"`).
+
+- Cada alberca es una escena 3D real (`play/pit.ts`): la tina, los postes y los costales con las
+  medidas del modelo, vistos con la misma cámara que hizo la foto (`play/scenes.ts`, copiado de
+  `art/src/shots`). Así las piezas vivas cubren toda la superficie, de lado a lado y hasta el fondo,
+  con la perspectiva de la foto, y lo que está enfrente en la foto (paredes, postes) las tapa.
+- La capa viva se acuesta sobre la pila pintada, que sigue debajo: donde se vacía, se ven las de la foto.
+- El puntero es una mano que barre la superficie; un clic o un toque hace saltar lo que tiene cerca.
+- Lo que sale volando, o se cae por el frente o un lado, pasa al mundo de la página (`playground.ts`):
+  1 px = 1 cm, la gravedad tira hacia abajo, los bordes de la página son paredes y el fondo del
+  footer es el piso. Ahí baja por toda la página y se queda en el footer, donde sigue reaccionando.
+  En pantalla todo cae igual de rápido en los dos mundos, así que el paso de uno a otro no se nota.
+- Cada alberca se llena cuando su sección termina de entrar. Se repone sola, y en el footer hay un
+  tope de piezas sueltas (`LOOSE`): al pasarlo salen las más viejas.
+- El footer empieza con unas cuantas piezas (`SEED`) para que el piso nunca esté vacío.
+- Cuesta cero en reposo: los cuerpos se duermen y el bucle se detiene hasta el siguiente
+  movimiento del puntero o del scroll.
+- Pesa ≈160 kB gzip, así que se descarga aparte, después de cargar la página y solo al acercarse a
+  una alberca o al footer. No se carga con `prefers-reduced-motion` ni con ahorro de datos, y sin
+  WebGL la página queda como estaba.
+- Ajustes rápidos: `FLING`, `CALM` y `SOFT` en `play/shared.ts` (qué tan lejos vuela algo, cuándo se
+  quedan quietas, cuándo dejan de rebotar), `gap` en `play/scenes.ts` (qué tan juntas quedan en la
+  alberca), y `LOOSE` y `SEED` en `playground.ts`.
 
 ## Arte 3D (`art/`)
 

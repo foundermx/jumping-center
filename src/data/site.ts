@@ -21,7 +21,7 @@ export const NAV = [
 
 export type ZoneId = 'trampolines' | 'retos' | 'infantil' | 'fiestas';
 
-/** The four stops of the park tour, in visiting order (same order as the hero rail). */
+/** The four stops of the park tour, in visiting order. */
 export const ZONES: { id: ZoneId; title: string; lines: string[]; text: string; alt: string }[] = [
   {
     id: 'trampolines',

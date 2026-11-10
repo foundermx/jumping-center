@@ -122,6 +122,22 @@ button { font: inherit; color: inherit; }
   border-radius: 8px;
 }
 
+/* ------------------------------------------------------------------ physics playground
+   The one canvas every live cube and ball is drawn on (scripts/playground.ts). It is a window a
+   little taller than the viewport that travels down the document with the scroll: being part of
+   the page, what it shows stays glued to the pictures even when scrolling runs ahead of a frame. */
+.playground {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 30; /* over the page, under the sticky header */
+  width: 100%;
+  height: calc(100vh + 320px);
+  height: calc(100lvh + 320px);
+  pointer-events: none;
+  visibility: hidden;
+}
+
 /* ------------------------------------------------------------------ buttons */
 
 .btn {
@@ -181,50 +197,6 @@ button { font: inherit; color: inherit; }
 }
 
 .btn:active { transform: scale(0.96); transition-duration: 0.1s; }
-
-/* ------------------------------------------------------------------ tour counter: 01 / 04 o—●—o—o */
-
-.counter {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  font-size: clamp(1rem, 0.9rem + 0.5vw, 1.35rem);
-  font-weight: 800;
-  letter-spacing: -0.01em;
-  font-variant-numeric: tabular-nums;
-}
-
-.counter__dots {
-  display: flex;
-  align-items: center;
-}
-
-.counter__dots i {
-  width: 11px;
-  height: 11px;
-  border: 2px solid currentColor;
-  border-radius: 50%;
-  opacity: 0.85;
-}
-
-.counter__dots i + i { margin-left: 13px; position: relative; }
-.counter__dots i + i::before {
-  content: '';
-  position: absolute;
-  right: calc(100% + 2px);
-  top: 50%;
-  width: 13px;
-  height: 2px;
-  background: currentColor;
-  translate: 0 -50%;
-}
-
-.counter__dots i.is-current {
-  background: var(--lime);
-  border-color: var(--lime);
-  opacity: 1;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--lime) 35%, transparent);
-}
 
 /* Multi-line display headings: one block per line (the reveal masks each one). */
 .lines > span { display: block; }
