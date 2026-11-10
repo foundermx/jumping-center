@@ -54,8 +54,10 @@ export function start(): boolean {
   const root = document.documentElement;
   const ground = document.querySelector('[data-play-floor]') ?? document.body;
   const canvas = document.createElement('canvas');
-  canvas.className = 'playground';
-  canvas.setAttribute('aria-hidden', 'true');
+  const box = document.createElement('div');
+  box.className = 'playground';
+  box.setAttribute('aria-hidden', 'true');
+  box.append(canvas);
 
   let renderer: WebGLRenderer;
   try {
@@ -63,7 +65,7 @@ export function start(): boolean {
   } catch {
     return false;
   }
-  document.body.append(canvas);
+  document.body.append(box);
   renderer.autoClear = false;
   // as the renders were developed, so a live piece looks like the painted ones around it
   renderer.toneMapping = NeutralToneMapping;
@@ -356,6 +358,7 @@ export function start(): boolean {
       bottom = floor;
       edges.floor.position.y = -bottom / U;
       edges.floor.aabbNeedsUpdate = true;
+      top = -1; // and the window goes where the new page has room for it
     }
 
     if (tall !== height || page !== sized) {

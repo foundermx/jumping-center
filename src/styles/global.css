@@ -125,16 +125,26 @@ button { font: inherit; color: inherit; }
 /* ------------------------------------------------------------------ physics playground
    The one canvas every live cube and ball is drawn on (scripts/playground.ts). It is a window a
    little taller than the viewport that travels down the document with the scroll: being part of
-   the page, what it shows stays glued to the pictures even when scrolling runs ahead of a frame. */
+   the page, what it shows stays glued to the pictures even when scrolling runs ahead of a frame.
+   It lives in a box exactly as big as the page that clips it, so it can never make the page longer
+   (when the page gets shorter, an answer closing, the window may hang past its end for a moment). */
+body { position: relative; }
+
 .playground {
+  position: absolute;
+  inset: 0;
+  z-index: 30; /* over the page, under the sticky header */
+  overflow: clip;
+  pointer-events: none;
+}
+
+.playground canvas {
   position: absolute;
   top: 0;
   left: 0;
-  z-index: 30; /* over the page, under the sticky header */
   width: 100%;
   height: calc(100vh + 320px);
   height: calc(100lvh + 320px);
-  pointer-events: none;
   visibility: hidden;
 }
 
