@@ -7,6 +7,7 @@ import { CITY } from '../data/site';
 ---
 
 <section class="hero" id="top" aria-labelledby="hero-title">
+  <div class="hero__stage">
   <div class="container hero__grid">
     <div class="hero__copy">
       <p class="eyebrow hero__eyebrow"><span class="pin" aria-hidden="true"></span>{CITY}</p>
@@ -27,7 +28,7 @@ import { CITY } from '../data/site';
         src={park}
         formats={['avif', 'webp']}
         fallbackFormat="webp"
-        widths={[640, 960, 1280, 1600]}
+        widths={[640, 960, 1280, 1600, park.width]}
         sizes="(min-width: 900px) 60vw, 100vw"
         quality={52}
         loading="eager"
@@ -59,12 +60,34 @@ import { CITY } from '../data/site';
   <div class="container hero__foot" data-loop>
     <a class="hint" href="#parque">Desliza para explorar <span class="chev" aria-hidden="true"></span></a>
   </div>
+  </div>
 </section>
 
 <style>
+  /* isolate: the zoomed park stays under the sections that come after it */
   .hero {
     position: relative;
-    padding-top: clamp(24px, 4vw, 56px);
+    isolation: isolate;
+  }
+
+  .hero__stage { padding-top: clamp(24px, 4vw, 56px); }
+
+  /* The first scroll goes into the model (scripts/hero.ts). On wide screens the hero holds still for
+     it: the stage sticks under the header (hero.ts sets the header's real height as `top`) while the
+     room after it scrolls by. The room is content, not padding: sticky only moves within content. */
+  @media (width >= 900px) and (prefers-reduced-motion: no-preference) {
+    .hero::after { content: ''; display: block; height: 50vh; }
+    .hero__stage { position: sticky; top: var(--header-h); }
+  }
+
+  /* What the zoom moves is painted once, on load, and then only moved: no repaint at each step,
+     and no stutter on the first scroll while the browser would otherwise set those layers up. */
+  @media (prefers-reduced-motion: no-preference) {
+    .hero__art,
+    .hero__orbit,
+    .hero__kid,
+    .cube { will-change: translate, scale; }
+    .hero__copy { will-change: opacity, translate; }
   }
 
   .hero__grid {
@@ -149,6 +172,7 @@ import { CITY } from '../data/site';
 
   .hero__kid {
     position: absolute;
+    transform-origin: 50% 97%; /* any scale keeps the feet on the bed */
     left: 48.85%;
     top: 66.57%;
     width: 14%;

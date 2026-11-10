@@ -30,6 +30,11 @@ de `retos.webp` e `infantil.webp` se reconstruyen en 3D con la cámara y la geom
 ## Movimiento
 
 - Entradas: `data-reveal` + IntersectionObserver añade `.is-in` una sola vez; el CSS hace el resto.
+- Zoom al modelo (`src/scripts/hero.ts`): con el primer scroll el parque crece hacia la cancha de
+  trampolines y se centra, el título se hace a un lado y la página sigue. En escritorio el hero se
+  queda fijo durante medio alto de pantalla (`.hero::after` en `Hero.astro`); en celular el zoom es
+  más leve y ocurre mientras el hero sale. Sigue al scroll con un pequeño retraso para que se deslice.
+  Ajustes: `ZOOM` y `FOCUS` arriba de `hero.ts`.
 - Loops (las mascotas de las zonas y las promos, los cubos del hero): solo corren mientras su bloque está en pantalla (`data-loop` → `.is-live`).
 - Parallax: `animation-timeline: view()` solo en escritorio y donde existe; sin JS de scroll.
 - `prefers-reduced-motion: reduce` muestra todo quieto.
