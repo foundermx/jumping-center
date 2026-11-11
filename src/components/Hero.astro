@@ -23,6 +23,8 @@ import { CITY } from '../data/site';
       <svg class="hero__orbit" viewBox="0 0 1000 520" fill="none" aria-hidden="true">
         <ellipse cx="500" cy="260" rx="480" ry="215" pathLength="1" />
       </svg>
+      <!-- The drone flight (scripts/hero.ts): a canvas over the whole screen, under the picture it grows out of. -->
+      <canvas class="hero__flight" aria-hidden="true"></canvas>
       <Picture
         class="hero__park"
         src={park}
@@ -72,23 +74,33 @@ import { CITY } from '../data/site';
 
   .hero__stage { padding-top: clamp(24px, 4vw, 56px); }
 
-  /* The first scroll goes into the model (scripts/hero.ts). On wide screens the hero holds still for
-     it: the stage sticks under the header (hero.ts sets the header's real height as `top`) while the
-     room after it scrolls by. The room is content, not padding: sticky only moves within content. */
-  @media (width >= 900px) and (prefers-reduced-motion: no-preference) {
-    .hero::after { content: ''; display: block; height: 50vh; }
-    .hero__stage { position: sticky; top: var(--header-h); }
-  }
+  /* The first scroll flies a drone through the model (scripts/hero.ts, which sets .is-flying). The
+     hero holds still for it: the stage sticks under the header (hero.ts sets its real top) while
+     the room after it scrolls by. The room is content, not padding: sticky only moves within content. */
+  .hero.is-flying::after { content: ''; display: block; height: 240svh; }
+  .hero.is-flying .hero__stage { position: sticky; top: var(--header-h); display: flex; flex-direction: column; }
+  /* the stage is as tall as the screen below the header (hero.ts): the hint sits at its foot */
+  .hero.is-flying .hero__foot { display: flex; margin-top: auto; }
 
-  /* What the zoom moves is painted once, on load, and then only moved: no repaint at each step,
-     and no stutter on the first scroll while the browser would otherwise set those layers up. */
-  @media (prefers-reduced-motion: no-preference) {
-    .hero__art,
-    .hero__orbit,
-    .hero__kid,
-    .cube { will-change: translate, scale; }
-    .hero__copy { will-change: opacity, translate; }
+  /* What the flight moves is painted once and then only moved: no repaint at each step, and no
+     stutter on the first scroll while the browser would otherwise set those layers up. */
+  .hero.is-flying .hero__park,
+  .hero.is-flying .hero__orbit,
+  .hero.is-flying .hero__kid,
+  .hero.is-flying .cube { will-change: translate, scale, opacity; }
+  .hero.is-flying .hero__copy { will-change: opacity, translate; }
+
+  .hero__flight {
+    position: absolute;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+    opacity: 0;
   }
+  .hero.is-flying .hero__flight { will-change: opacity; }
 
   .hero__grid {
     display: grid;

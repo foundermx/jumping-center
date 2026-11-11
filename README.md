@@ -23,18 +23,26 @@ pnpm check                  # tipos y plantillas
 
 Para poner fotos reales basta con reemplazar el `.webp` del mismo nombre (o cambiar el import).
 Astro genera AVIF/WebP en varios anchos al compilar. Ojo con tres imágenes: la mascota del hero
-está parada sobre una cama medida en `hero.webp` (`.hero__kid` en `Hero.astro`), y las albercas
-de `retos.webp` e `infantil.webp` se reconstruyen en 3D con la cámara y la geometría de sus renders
-(`src/scripts/play/scenes.ts`). Si cambia una de esas imágenes, hay que actualizar eso también.
+está parada sobre una cama medida en `hero.webp` (`.hero__kid` en `Hero.astro`), el vuelo del dron
+empieza exactamente en `hero.webp` (ver abajo), y las albercas de `retos.webp` e `infantil.webp` se
+reconstruyen en 3D con la cámara y la geometría de sus renders (`src/scripts/play/scenes.ts`). Si
+cambia una de esas imágenes, hay que actualizar eso también.
 
 ## Movimiento
 
 - Entradas: `data-reveal` + IntersectionObserver añade `.is-in` una sola vez; el CSS hace el resto.
-- Zoom al modelo (`src/scripts/hero.ts`): con el primer scroll el parque crece hacia la cancha de
-  trampolines y se centra, el título se hace a un lado y la página sigue. En escritorio el hero se
-  queda fijo durante medio alto de pantalla (`.hero::after` en `Hero.astro`); en celular el zoom es
-  más leve y ocurre mientras el hero sale. Sigue al scroll con un pequeño retraso para que se deslice.
-  Ajustes: `ZOOM` y `FOCUS` arriba de `hero.ts`.
+- Vuelo de dron (`src/scripts/hero.ts`): con el primer scroll la cámara entra al modelo, baja a los
+  trampolines, pasa junto al circuito ninja y casi rozando la alberca de pelotas, y sale a una vista
+  de todo el parque; luego la página sigue. El hero se queda fijo mientras tanto (`240svh` de
+  scroll, `.hero.is-flying::after` en `Hero.astro`). Son 72 cuadros renderizados de la misma escena
+  que `hero.webp` (ver «Arte 3D»), dibujados en un canvas del tamaño de la pantalla: el primero cae
+  justo sobre la imagen y el vuelo crece desde ahí. Escritorio y celular reciben recortes distintos
+  del mismo cuadro (`src/assets/flight/wide` y `narrow`). Se descargan después de la imagen del
+  hero, de grueso a fino, y se decodifican solo alrededor de donde va el vuelo; mientras no llegan,
+  la imagen hace un zoom. La mascota se mueve con los cuadros a donde está parada en ellos, se
+  desvanece cuando el dron se le acerca y vuelve en la vista final. Sigue al scroll con un pequeño
+  retraso para que se deslice. Sin vuelo con `prefers-reduced-motion` o ahorro de datos: el hero
+  queda quieto.
 - Loops (las mascotas de las zonas y las promos, los cubos del hero): solo corren mientras su bloque está en pantalla (`data-loop` → `.is-live`).
 - Parallax: `animation-timeline: view()` solo en escritorio y donde existe; sin JS de scroll.
 - `prefers-reduced-motion: reduce` muestra todo quieto.
@@ -80,6 +88,17 @@ python3 finish.py            # quita ruido y exporta a src/assets/renders
 node logo.mjs && node mark.mjs && node og.mjs   # logo, favicon, imagen social e ícono iOS
 ```
 
+El vuelo del hero: la ruta de la cámara está en `art/src/flight.js` (`KEYS`: posición, a dónde mira
+y apertura, repartidos parejo en el tiempo; el primero es la cámara de `shots/hero.js`).
+
+```sh
+node render-flight.mjs --mode preview --bg none   # vista previa instantánea (sin path tracing)
+node render-flight.mjs --skip-done                # 72 cuadros cuadrados de 1280 px (≈1 h en un M1)
+python3 finish-flight.py                          # quita ruido, recorta y escribe src/data/flight.ts
+```
+
+`finish-flight.py` también mide dónde cae `hero.webp` en el primer cuadro y dónde está la mascota en
+cada uno, así que si cambia el render del hero o la ruta, basta con volver a correr los dos pasos.
 ## Pendiente del cliente
 
 - Fotos reales del parque, el logo en vector (el actual es una reconstrucción) y la mascota en PNG
