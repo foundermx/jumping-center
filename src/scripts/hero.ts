@@ -47,15 +47,47 @@ if (hero && stage && art && canvas && ctx && 'createImageBitmap' in window && !s
 
   /* ---------------------------------------------------------------- frames */
 
+  type Frame = ImageBitmap | HTMLImageElement;
+
   let kind: Kind = 'wide';
   let files: (Blob | undefined)[] = [];
-  const bitmaps = new Map<number, ImageBitmap>();
+  const bitmaps = new Map<number, Frame>();
   const decoding = new Set<number>();
   let batch = 0;
 
   /** Coarse to fine, the first and the last view first: a flight half loaded still plays. */
   const ORDER = [0, N - 1];
   for (let stride = 8; stride >= 1; stride /= 2) for (let i = 0; i < N; i += stride) if (!ORDER.includes(i)) ORDER.push(i);
+
+  // Safari (and every browser on iOS) decodes createImageBitmap(blob) on the main thread, a stall for
+  // each frame in the middle of the flight, and each bitmap it makes is 4 MB its garbage collector
+  // must come back for, now and then in one long pause. So there the frames are decoded by a few
+  // <img>s, off the main thread, and drawn straight from them, the same few over and over: nothing
+  // left behind to collect. Elsewhere createImageBitmap(blob) is off the main thread already.
+  const ua = navigator.userAgent;
+  const webkit = /AppleWebKit/.test(ua) && !/(Chrome|Chromium|Edg)\//.test(ua);
+  const spare: HTMLImageElement[] = [];
+
+  async function decode(blob: Blob): Promise<Frame> {
+    if (!webkit) return createImageBitmap(blob);
+    const img = spare.pop() ?? new Image();
+    const url = URL.createObjectURL(blob);
+    img.src = url;
+    try {
+      await img.decode();
+      return img;
+    } catch (error) {
+      spare.push(img);
+      throw error;
+    } finally {
+      URL.revokeObjectURL(url); // the <img> holds the file now
+    }
+  }
+
+  function release(frame: Frame) {
+    if (frame instanceof HTMLImageElement) spare.push(frame);
+    else frame.close();
+  }
 
   let picked = false; // fetching may begin (once the picture itself is in)
 
@@ -64,7 +96,7 @@ if (hero && stage && art && canvas && ctx && 'createImageBitmap' in window && !s
     if (!picked) return;
     const mine = ++batch;
     files = new Array(N);
-    bitmaps.forEach((bitmap) => bitmap.close());
+    bitmaps.forEach(release);
     bitmaps.clear();
     decoding.clear();
     let k = 0;
@@ -94,7 +126,7 @@ if (hero && stage && art && canvas && ctx && 'createImageBitmap' in window && !s
     const keep = (i: number) => (i - at) * on <= 10 && (at - i) * on <= 3;
     for (const [i, bitmap] of bitmaps) {
       if (keep(i) || i === 0 || i === N - 1) continue;
-      bitmap.close();
+      release(bitmap);
       bitmaps.delete(i);
     }
     const mine = batch;
@@ -105,10 +137,10 @@ if (hero && stage && art && canvas && ctx && 'createImageBitmap' in window && !s
       const blob = files[i];
       if (!blob || bitmaps.has(i) || decoding.has(i)) continue;
       decoding.add(i);
-      createImageBitmap(blob).then(
+      decode(blob).then(
         (bitmap) => {
           decoding.delete(i);
-          if (mine !== batch || !(keep(i) || i === 0 || i === N - 1)) return bitmap.close();
+          if (mine !== batch || !(keep(i) || i === 0 || i === N - 1)) return release(bitmap);
           bitmaps.set(i, bitmap);
           want();
           request();
@@ -265,7 +297,7 @@ if (hero && stage && art && canvas && ctx && 'createImageBitmap' in window && !s
     if (drawn === f) return m;
     ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx!.clearRect(0, 0, W, H);
-    const blit = (bitmap: ImageBitmap, j: number) => {
+    const blit = (bitmap: Frame, j: number) => {
       const [bx, by, bw, bh] = box(kind, j);
       ctx!.drawImage(bitmap, m.a * bx + m.x, m.a * by + m.y, m.a * bw, m.a * bh);
     };

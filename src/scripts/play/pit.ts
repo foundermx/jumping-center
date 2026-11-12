@@ -267,6 +267,9 @@ export class Pit {
     mesh.frustumCulled = false;
     mesh.castShadow = mesh.receiveShadow = shadows;
     mesh.count = 0;
+    // its colours from the start, so the shader compiled ahead of time is the one it is drawn with
+    // (Safari compiles a missing one on the main thread, mid-scroll)
+    mesh.setColorAt(0, paint(spec.kind));
     scene.add(mesh);
   }
 
@@ -645,6 +648,20 @@ export class Pit {
   }
 
   // ------------------------------------------------------------ drawing
+
+  /** Draws one piece into the canvas's corner pixel: whatever its first real draw would set up besides
+   *  the shaders (the shadow pass and its own shader, the shadow map, the buffers) is then ready. */
+  warm(renderer: WebGLRenderer) {
+    const { mesh } = this;
+    mesh.setMatrixAt(0, matrix.identity());
+    mesh.count = 1;
+    mesh.instanceMatrix.needsUpdate = true;
+    renderer.setViewport(0, 0, 1, 1);
+    renderer.setScissor(0, 0, 1, 1);
+    renderer.setScissorTest(true);
+    renderer.render(this.scene, this.camera);
+    mesh.count = 0;
+  }
 
   /** Draws the pit into its picture's place on the canvas, which shows the page from `top` down, `height` px tall. */
   render(renderer: WebGLRenderer, top: number, height: number) {

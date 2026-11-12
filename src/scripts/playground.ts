@@ -101,6 +101,7 @@ export function start(): boolean {
     mesh.frustumCulled = false;
     mesh.castShadow = mesh.receiveShadow = !lite;
     mesh.count = 0;
+    mesh.setColorAt(0, paint(kind)); // as in Pit: the shader compiled ahead of time is the one drawn
     scene.add((meshes[kind] = mesh));
   }
 
@@ -191,7 +192,37 @@ export function start(): boolean {
     return spec ? [new Pit(spec, el, env, !lite, adopt)] : [];
   });
   // Every shader up front, off the main thread where the browser can: no hitch on the first throw.
-  for (const [s, c] of [[scene, camera], ...pits.map((pit) => pit.view)] as const) renderer.compileAsync(s, c).catch(() => {});
+  // Then, at a quiet moment, one draw of everything into a corner pixel, for what else a first draw
+  // sets up (the shadow passes, their maps). Safari does all of it on the main thread: left for the
+  // first pit to come into view, that is a long freeze in the middle of a scroll.
+  const views = [[scene, camera], ...pits.map((pit) => pit.view)] as const;
+  Promise.all(views.map(([s, c]) => renderer.compileAsync(s, c)))
+    .then(() => quiet(warm))
+    .catch(() => {});
+
+  let scrolled = 0;
+  /** Runs `job` once the page has not scrolled for a moment. */
+  function quiet(job: () => void) {
+    const wait = 200 - (performance.now() - scrolled);
+    if (wait > 0) setTimeout(() => quiet(job), wait);
+    else job();
+  }
+
+  function warm() {
+    if (visible) return; // already drawing for real
+    for (const pit of pits) pit.warm(renderer);
+    const one = new Matrix4();
+    for (const mesh of Object.values(meshes)) {
+      mesh.setMatrixAt(0, one);
+      mesh.count = 1;
+      mesh.instanceMatrix.needsUpdate = true;
+    }
+    renderer.setViewport(0, 0, 1, 1);
+    renderer.setScissor(0, 0, 1, 1);
+    renderer.setScissorTest(true);
+    renderer.render(scene, camera);
+    for (const mesh of Object.values(meshes)) mesh.count = 0;
+  }
 
   function remove(index: number) {
     const [item] = items.splice(index, 1);
@@ -560,6 +591,7 @@ export function start(): boolean {
   addEventListener(
     'scroll',
     () => {
+      scrolled = performance.now();
       letGo();
       request();
     },
