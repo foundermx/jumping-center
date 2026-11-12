@@ -7,9 +7,17 @@
 // exactly on the picture, and the flight grows out of it. They come in coarse to fine and are
 // decoded around wherever the flight is; until they are there, the picture itself zooms in.
 // The mascot, a cut-out over the picture, is moved with the frames to where he stands in them.
+//
+// Between two frames the picture is not a cross-fade: with WebGL each frame is drawn as a mesh over
+// the optical flow to the next one (art/flight-motion.py), every point sliding along its own path
+// while the next frame slides in from the other end, so however slowly the page scrolls the flight
+// moves, near things and far things each at their own speed. Without WebGL, a canvas 2D moves both
+// frames by the camera's overall zoom and pan instead.
 import { FLIGHT } from '../data/flight';
+import { GRID, MOTION, QUARTER } from '../data/flight-motion';
 
 const FILES = import.meta.glob<string>('../assets/flight/*/*.webp', { eager: true, query: '?url', import: 'default' });
+const FLOWS = import.meta.glob<string>('../assets/flight/flow-*.bin', { eager: true, query: '?url', import: 'default' });
 
 type Kind = keyof typeof FLIGHT.boxes;
 type Map2 = { a: number; x: number; y: number }; // square px → canvas px: (a·X + x, a·Y + y)
@@ -18,11 +26,12 @@ const hero = document.querySelector<HTMLElement>('.hero');
 const stage = hero?.querySelector<HTMLElement>('.hero__stage');
 const art = hero?.querySelector<HTMLElement>('.hero__art');
 const canvas = hero?.querySelector<HTMLCanvasElement>('.hero__flight');
-const ctx = canvas?.getContext('2d');
+const gl = canvas?.getContext('webgl', { alpha: true, premultipliedAlpha: true, antialias: false, depth: false, stencil: false }) ?? null;
+const ctx = gl ? null : canvas?.getContext('2d');
 const connection = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
 const slow = connection?.saveData || /2g$/.test(connection?.effectiveType ?? '');
 
-if (hero && stage && art && canvas && ctx && 'createImageBitmap' in window && !slow && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+if (hero && stage && art && canvas && (gl || ctx) && 'createImageBitmap' in window && !slow && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
   hero.classList.add('is-flying'); // the room to scroll through, and the pin (Hero.astro)
 
   const park = hero.querySelector<HTMLElement>('.hero__park');
@@ -99,6 +108,19 @@ if (hero && stage && art && canvas && ctx && 'createImageBitmap' in window && !s
     bitmaps.forEach(release);
     bitmaps.clear();
     decoding.clear();
+    forget();
+    flow = null;
+    if (gl) {
+      // the frames' flow, a little file: until it is in, frames move by the overall zoom and pan
+      fetch(FLOWS[`../assets/flight/flow-${next}.bin`])
+        .then((response) => (response.ok ? response.arrayBuffer() : null))
+        .then((data) => {
+          if (mine !== batch || !data || data.byteLength !== (N - 1) * GRID * GRID * 4) return;
+          flow = new Int16Array(data);
+          request();
+        })
+        .catch(() => {});
+    }
     let k = 0;
     const fetchNext = async (): Promise<void> => {
       while (k < ORDER.length && mine === batch) {
@@ -272,48 +294,250 @@ if (hero && stage && art && canvas && ctx && 'createImageBitmap' in window && !s
   let drawn = -1; // the flight position on the canvas, -1: nothing
   let shown = 0; // how much the canvas has taken over from the picture (glides)
 
-  /** Draws the flight at frame position `f`; false if no frame near it is decoded yet. */
-  function paint(f: number, t: number): Map2 | null {
+  /** Frame `j` moved `u` of the way along the camera's path to the next frame (back toward the one
+   *  before, for u < 0): a zoom and a pan, in the frames' own px (see art/flight-motion.py). */
+  function step(j: number, u: number): Map2 {
+    const q = u >= 0 ? j : j - 1;
+    const v = Math.abs(u);
+    if (!v || q < 0 || q > N - 2) return { a: 1, x: 0, y: 0 };
+    let [s, tx, ty] = MOTION[kind].slice(q * 3, q * 3 + 3);
+    if (u < 0) [s, tx, ty] = [1 / s, -tx / s, -ty / s];
+    return { a: 1 + (s - 1) * v, x: tx * v, y: ty * v };
+  }
+  /** `n`, then `m`. */
+  const then = (m: Map2, n: Map2): Map2 => ({ a: m.a * n.a, x: m.a * n.x + m.x, y: m.a * n.y + m.y });
+
+  /** Per frame, where the first one's px are in it: all the camera's steps up to there. */
+  const chains = new Map<Kind, Map2[]>();
+  function chain(i: number) {
+    let all = chains.get(kind);
+    if (!all) {
+      all = [{ a: 1, x: 0, y: 0 }];
+      for (let j = 0; j < N - 1; j++) all.push(then(step(j, 1), all[j]));
+      chains.set(kind, all);
+    }
+    return all[i];
+  }
+
+  /** The decoded frame nearest to `f`, if any is within 10 frames. */
+  function nearest(f: number): [Frame, number] | null {
+    for (let d = 1; d <= 10; d++) {
+      for (const j of [Math.round(f) - d, Math.round(f) + d]) {
+        const near = bitmaps.get(j);
+        if (near) return [near, j];
+      }
+    }
+    return null;
+  }
+
+  /** Draws the flight at frame position `f`: where it put the mascot's frames and the first frame
+   *  (the picture), or null if no frame near it is decoded yet. */
+  function paint(f: number, t: number): { m: Map2; m0: Map2 } | null {
     const i = Math.min(Math.floor(f), N - 2);
-    // each frame shows on its own most of the way to the next, then a quick cross-fade: a still
-    // scroll never rests on two frames at once
-    const w = smooth(0.2, 0.8, f - i);
+    const u = f - i;
+    const base = placement(t);
+    const m0 = then(then(base, step(i, u)), chain(i)); // the first frame, carried along to here
+    if (gl) return paintGL(f, i, u, base, m0);
+    // Between two frames both move along the camera's path, this one on toward the next and the
+    // next in from where this one stands, while one fades into the other all the way across: however
+    // slowly the page scrolls, the picture keeps moving (frames that held still and then crossed
+    // quickly read as a stutter), and the two line up as they cross.
+    const w = smooth(0, 1, u);
+    const mA = fit(then(base, step(i, u)), i);
+    const mB = fit(then(base, step(i + 1, u - 1)), i + 1);
     let a = bitmaps.get(i);
     let b = w > 0.002 ? bitmaps.get(i + 1) : undefined;
     let ia = i;
-    let ib = i + 1;
-    if (!a && b) [a, ia, b] = [b, i + 1, undefined];
+    let ma = mA;
+    if (!a && b) [a, ia, ma, b] = [b, i + 1, mB, undefined];
     if (!a) {
-      for (let d = 1; d <= 10 && !a; d++) {
-        for (const j of [Math.round(f) - d, Math.round(f) + d]) {
-          const near = bitmaps.get(j);
-          if (near) [a, ia] = [near, j];
-        }
-      }
-      if (!a) return null;
+      const near = nearest(f);
+      if (!near) return null;
+      [a, ia] = near;
+      ma = fit(base, ia);
     }
-    const base = placement(t);
-    const m = b ? mix(fit(base, ia), fit(base, ib), w) : fit(base, ia);
-    if (drawn === f) return m;
+    const m = mix(mA, mB, u); // where the mascot is: between where the two frames have him
+    if (drawn === f) return { m, m0 };
     ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx!.clearRect(0, 0, W, H);
-    const blit = (bitmap: Frame, j: number) => {
+    const blit = (bitmap: Frame, j: number, at: Map2) => {
       const [bx, by, bw, bh] = box(kind, j);
-      ctx!.drawImage(bitmap, m.a * bx + m.x, m.a * by + m.y, m.a * bw, m.a * bh);
+      ctx!.drawImage(bitmap, at.a * bx + at.x, at.a * by + at.y, at.a * bw, at.a * bh);
     };
     // a cross-fade: (1 − w)·A + w·B, added up in premultiplied colour
     ctx!.globalCompositeOperation = 'source-over';
     ctx!.globalAlpha = b ? 1 - w : 1;
-    blit(a, ia);
+    blit(a, ia, ma);
     if (b) {
       ctx!.globalCompositeOperation = 'lighter';
       ctx!.globalAlpha = w;
-      blit(b, ib);
+      blit(b, i + 1, mB);
     }
     ctx!.globalCompositeOperation = 'source-over';
     ctx!.globalAlpha = 1;
     drawn = f;
-    return m;
+    return { m, m0 };
+  }
+
+  /* ---------------------------------------------------------------- WebGL: frames as meshes */
+
+  let flow: Int16Array | null = null; // per pair of frames, where each grid point of the first is in the next
+  const SIDE = GRID + 2; // the grid over a frame, and a ring around it so its edges never show
+  const RING = 0.3; // how far out the ring lies, of the frame's size
+  const textures = new Map<number, WebGLTexture>(); // the last frames drawn, by frame: none uploaded twice
+  let program: WebGLProgram | null = null;
+  const vertices = new Float32Array(SIDE * SIDE * 6); // per point: where on the canvas, where in frame A, in frame B
+  let uniforms: { view: WebGLUniformLocation | null; w: WebGLUniformLocation | null } = { view: null, w: null };
+
+  /** The move of grid point (gx, gy) of frame i to frame i + 1, square px; `x`, `y` is where it is. */
+  function move(i: number, gx: number, gy: number, x: number, y: number): [number, number] {
+    if (flow) {
+      const k = ((i * GRID + gy) * GRID + gx) * 2;
+      return [flow[k] / QUARTER, flow[k + 1] / QUARTER];
+    }
+    const [s, tx, ty] = MOTION[kind].slice(i * 3, i * 3 + 3);
+    return [(s - 1) * x + tx, (s - 1) * y + ty];
+  }
+
+  function setup() {
+    const g = gl!;
+    const shader = (type: number, source: string) => {
+      const s = g.createShader(type)!;
+      g.shaderSource(s, source);
+      g.compileShader(s);
+      return s;
+    };
+    const p = g.createProgram()!;
+    g.attachShader(p, shader(g.VERTEX_SHADER, 'attribute vec2 p,a,b;uniform vec2 view;varying vec2 va,vb;void main(){va=a;vb=b;gl_Position=vec4(p.x/view.x*2.0-1.0,1.0-p.y/view.y*2.0,0.0,1.0);}'));
+    // in highp where it exists: a mediump place in a 1280 px frame is off by a pixel or more
+    g.attachShader(p, shader(g.FRAGMENT_SHADER, '#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\nuniform sampler2D A,B;uniform float w;varying vec2 va,vb;void main(){gl_FragColor=mix(texture2D(A,va),texture2D(B,vb),w);}'));
+    g.linkProgram(p);
+    g.useProgram(p);
+    program = p;
+    uniforms = { view: g.getUniformLocation(p, 'view'), w: g.getUniformLocation(p, 'w') };
+    g.uniform1i(g.getUniformLocation(p, 'A'), 0);
+    g.uniform1i(g.getUniformLocation(p, 'B'), 1);
+    g.bindBuffer(g.ARRAY_BUFFER, g.createBuffer());
+    g.bufferData(g.ARRAY_BUFFER, vertices.byteLength, g.DYNAMIC_DRAW);
+    ['p', 'a', 'b'].forEach((name, n) => {
+      const loc = g.getAttribLocation(p, name);
+      g.enableVertexAttribArray(loc);
+      g.vertexAttribPointer(loc, 2, g.FLOAT, false, 24, n * 8);
+    });
+    const quads: number[] = [];
+    for (let r = 0; r < SIDE - 1; r++) {
+      for (let c = 0; c < SIDE - 1; c++) {
+        const k = r * SIDE + c;
+        quads.push(k, k + 1, k + SIDE, k + 1, k + SIDE + 1, k + SIDE);
+      }
+    }
+    g.bindBuffer(g.ELEMENT_ARRAY_BUFFER, g.createBuffer());
+    g.bufferData(g.ELEMENT_ARRAY_BUFFER, new Uint16Array(quads), g.STATIC_DRAW);
+    g.pixelStorei(g.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+    g.clearColor(0, 0, 0, 0);
+  }
+
+  function forget() {
+    textures.forEach((texture) => gl?.deleteTexture(texture));
+    textures.clear();
+  }
+
+  /** Frame i's texture, uploaded the first time it is drawn; the six last drawn are kept. */
+  function texture(i: number, frame: Frame) {
+    const g = gl!;
+    let t = textures.get(i);
+    if (t) {
+      textures.delete(i);
+    } else {
+      t = g.createTexture()!;
+      g.bindTexture(g.TEXTURE_2D, t);
+      g.texParameteri(g.TEXTURE_2D, g.TEXTURE_WRAP_S, g.CLAMP_TO_EDGE);
+      g.texParameteri(g.TEXTURE_2D, g.TEXTURE_WRAP_T, g.CLAMP_TO_EDGE);
+      g.texParameteri(g.TEXTURE_2D, g.TEXTURE_MIN_FILTER, g.LINEAR);
+      g.texParameteri(g.TEXTURE_2D, g.TEXTURE_MAG_FILTER, g.LINEAR);
+      g.texImage2D(g.TEXTURE_2D, 0, g.RGBA, g.RGBA, g.UNSIGNED_BYTE, frame);
+      while (textures.size >= 6) {
+        const [old, gone] = textures.entries().next().value!;
+        g.deleteTexture(gone);
+        textures.delete(old);
+      }
+    }
+    textures.set(i, t);
+    return t;
+  }
+
+  /**
+   * The GL side of paint(): frame i, `u` of the way to the next. Every grid point of frame i goes
+   * `u` of its way to where it is in frame i + 1, showing frame i there and frame i + 1 from where it
+   * ends up, the two mixed by u. At u = 0 that is frame i as it is, at u = 1 frame i + 1 as it is.
+   */
+  function paintGL(f: number, i: number, u: number, base: Map2, m0: Map2): { m: Map2; m0: Map2 } | null {
+    const g = gl!;
+    if (g.isContextLost()) return null;
+    let a = bitmaps.get(i);
+    let b = bitmaps.get(i + 1);
+    let ia = i;
+    let ib = i + 1;
+    let uu = u;
+    let w = u;
+    // where the pair is drawn: the frames' own fits, from this one's to the next one's
+    let m = mix(fit(base, i), fit(base, i + 1), u);
+    if (!a && !b) {
+      const near = nearest(f);
+      if (!near) return null;
+      [a, ia] = near;
+      [b, ib, uu, w, m] = [undefined, ia, 0, 0, fit(base, ia)];
+    } else if (!a) w = 1;
+    else if (!b) w = 0;
+    if (drawn === f) return { m, m0 };
+    if (!program) setup();
+
+    const [ax, ay, aw, ah, cuts] = box(kind, ia);
+    const [bx, by, bw, bh] = box(kind, ib);
+    // the ring reaches out only past the sides where the picture goes on (its edge stretched out
+    // there); past the others it is nothing, as the frame's own empty margin would be
+    const [left, top, right, bottom] = [1, 2, 4, 8].map((side) => (cuts & side ? RING : 0));
+    let n = 0;
+    for (let r = 0; r < SIDE; r++) {
+      const gy = Math.min(Math.max(r - 1, 0), GRID - 1);
+      const ey = r === 0 ? -top : r === SIDE - 1 ? 1 + bottom : gy / (GRID - 1);
+      for (let c = 0; c < SIDE; c++) {
+        const gx = Math.min(Math.max(c - 1, 0), GRID - 1);
+        const ex = c === 0 ? -left : c === SIDE - 1 ? 1 + right : gx / (GRID - 1);
+        const x = ax + ex * aw;
+        const y = ay + ey * ah;
+        const [dx, dy] = uu ? move(ia, gx, gy, ax + (gx / (GRID - 1)) * aw, ay + (gy / (GRID - 1)) * ah) : [0, 0];
+        vertices[n++] = m.a * (x + uu * dx) + m.x;
+        vertices[n++] = m.a * (y + uu * dy) + m.y;
+        vertices[n++] = ex;
+        vertices[n++] = ey;
+        vertices[n++] = (x + dx - bx) / bw;
+        vertices[n++] = (y + dy - by) / bh;
+      }
+    }
+    g.viewport(0, 0, canvas!.width, canvas!.height);
+    g.clear(g.COLOR_BUFFER_BIT);
+    g.uniform2f(uniforms.view, W, H);
+    g.uniform1f(uniforms.w, w);
+    const ta = a && texture(ia, a);
+    const tb = b && texture(ib, b);
+    g.activeTexture(g.TEXTURE0);
+    g.bindTexture(g.TEXTURE_2D, (ta || tb)!);
+    g.activeTexture(g.TEXTURE1);
+    g.bindTexture(g.TEXTURE_2D, (tb || ta)!);
+    g.bufferSubData(g.ARRAY_BUFFER, 0, vertices);
+    g.drawElements(g.TRIANGLES, (SIDE - 1) * (SIDE - 1) * 6, g.UNSIGNED_SHORT, 0);
+    drawn = f;
+    return { m, m0 };
+  }
+
+  if (gl) {
+    canvas.addEventListener('webglcontextlost', (event) => event.preventDefault());
+    canvas.addEventListener('webglcontextrestored', () => {
+      program = null;
+      textures.clear();
+      request();
+    });
   }
 
   /** Sets a style only when it changes: most of the hero is still most of the time. */
@@ -333,18 +557,20 @@ if (hero && stage && art && canvas && ctx && 'createImageBitmap' in window && !s
     const f = p * (N - 1);
     // drawn even at rest, unseen under the picture: the first scroll finds it ready to show
     const live = paint(f, p);
-    const m = live ?? fit(placement(p), 0);
+    const m = live?.m ?? fit(placement(p), 0);
     // the canvas takes over from the picture during the first steps (the same image there)
     const goal = live && p > 0 ? smooth(0, 0.035, p) : 0;
     shown = dt ? shown + (goal - shown) * (1 - Math.exp(-dt * 14)) : goal;
     if (Math.abs(goal - shown) < 0.002) shown = goal;
     put(canvas, 'opacity', live && p > 0 ? '1' : '0');
 
-    // the picture is frame 0: it rides along with the frames while they take over (scaled about
-    // its box's centre, where the entrance animation scales it too)
-    const s = m.a / start.a;
+    // the picture is frame 0: it rides along with the frames while they take over, where the camera
+    // has carried it, so the two line up as one fades into the other (scaled about its box's centre,
+    // where the entrance animation scales it too); long gone after START, it just goes with them
+    const m0 = live && p < START ? live.m0 : m;
+    const s = m0.a / start.a;
     put(park, 'scale', n3(s));
-    put(park, 'translate', `${px(m.a * hx0 + m.x - (picture.cx + s * (picture.x - picture.cx)))} ${px(m.a * hy0 + m.y - (picture.cy + s * (picture.y - picture.cy)))}`);
+    put(park, 'translate', `${px(m0.a * hx0 + m0.x - (picture.cx + s * (picture.x - picture.cx)))} ${px(m0.a * hy0 + m0.y - (picture.cy + s * (picture.y - picture.cy)))}`);
     put(park, 'opacity', n3(1 - shown));
 
     put(copy, 'opacity', n3(1 - smooth(0, 0.09, p)));
@@ -388,7 +614,8 @@ if (hero && stage && art && canvas && ctx && 'createImageBitmap' in window && !s
   let before = 0;
 
   function frame(time: number) {
-    const dt = Math.min((time - before) / 1000, 0.05);
+    // a frame's time can be from before it was asked for: never a step back (it would overshoot)
+    const dt = Math.min(Math.max(time - before, 0) / 1000, 0.05);
     before = time;
     // follows the scroll with a short lag, so it glides instead of stepping with each wheel notch
     now = now < 0 ? goal : now + (goal - now) * (1 - Math.exp(-dt * 8));
@@ -427,7 +654,7 @@ if (hero && stage && art && canvas && ctx && 'createImageBitmap' in window && !s
   remeasure();
 
   // the frames wait for the picture: it is what the page paints first
-  const img = park?.querySelector('img');
+  const img = park instanceof HTMLImageElement ? park : park?.querySelector('img'); // <Picture> puts the class on the <img>
   const begin = () => {
     picked = true;
     load(kind);

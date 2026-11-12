@@ -39,7 +39,13 @@ cambia una de esas imágenes, hay que actualizar eso también.
   justo sobre la imagen y el vuelo crece desde ahí. Escritorio y celular reciben recortes distintos
   del mismo cuadro (`src/assets/flight/wide` y `narrow`). Se descargan después de la imagen del
   hero, de grueso a fino, y se decodifican solo alrededor de donde va el vuelo; mientras no llegan,
-  la imagen hace un zoom. La mascota se mueve con los cuadros a donde está parada en ellos, se
+  la imagen hace un zoom. Entre un cuadro y el siguiente no hay un simple fundido: con WebGL cada
+  cuadro se dibuja como una malla de 24×24 puntos sobre el flujo óptico hacia el siguiente
+  (`src/assets/flight/flow-*.bin`, ≈210 KB), y cada punto se desliza por su propio camino mientras el
+  siguiente cuadro entra desde el otro extremo: el vuelo avanza fluido a cualquier velocidad de
+  scroll, lo cercano y lo lejano cada quien a su paso. Sin WebGL, un canvas 2D mueve los dos cuadros
+  con el zoom y desplazamiento generales de la cámara (`src/data/flight-motion.ts`). La mascota se
+  mueve con los cuadros a donde está parada en ellos, se
   desvanece cuando el dron se le acerca y vuelve en la vista final. Sigue al scroll con un pequeño
   retraso para que se deslice. Sin vuelo con `prefers-reduced-motion` o ahorro de datos: el hero
   queda quieto.
@@ -95,10 +101,11 @@ y apertura, repartidos parejo en el tiempo; el primero es la cámara de `shots/h
 node render-flight.mjs --mode preview --bg none   # vista previa instantánea (sin path tracing)
 node render-flight.mjs --skip-done                # 72 cuadros cuadrados de 1280 px (≈1 h en un M1)
 python3 finish-flight.py                          # quita ruido, recorta y escribe src/data/flight.ts
+python3 flight-motion.py                          # flujo óptico entre cuadros → src/assets/flight/flow-*.bin y src/data/flight-motion.ts
 ```
 
 `finish-flight.py` también mide dónde cae `hero.webp` en el primer cuadro y dónde está la mascota en
-cada uno, así que si cambia el render del hero o la ruta, basta con volver a correr los dos pasos.
+cada uno, así que si cambia el render del hero o la ruta, basta con volver a correr los pasos.
 ## Pendiente del cliente
 
 - Fotos reales del parque, el logo en vector (el actual es una reconstrucción) y la mascota en PNG

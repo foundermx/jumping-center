@@ -145,6 +145,10 @@ import { CITY } from '../data/site';
     aspect-ratio: 4 / 3;
   }
 
+  /* <Picture> puts the class on its <img>: the <picture> around it must be as tall as the box too, or
+     the image sits at its top instead of centred, where the mascot's bed and the flight expect it */
+  .hero__art > :global(picture) { height: 100%; }
+
   .hero__park :global(img),
   .hero__park {
     position: relative;
