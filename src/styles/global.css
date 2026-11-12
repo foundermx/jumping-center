@@ -41,10 +41,6 @@ html {
   background: var(--cream);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  html { scroll-behavior: smooth; }
-}
-
 /* The full-screen mobile menu is a popover: keep the page behind it still. */
 html:has(#menu:popover-open) { overflow: hidden; }
 
